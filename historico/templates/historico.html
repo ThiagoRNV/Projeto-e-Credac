@@ -1,0 +1,394 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/validacao_dados.css' %}">
+<style>
+    .hist-layout {
+        grid-template-columns: 260px minmax(0, 1fr);
+    }
+    .hist-campo {
+        display: inline-block;
+        font-size: 0.78rem;
+        font-weight: 600;
+        padding: 0.2rem 0.55rem;
+        border-radius: 6px;
+        background: #f1f5f9;
+        color: #334155;
+        white-space: nowrap;
+    }
+    .hist-periodo {
+        font-weight: 600;
+        color: #1e293b;
+        white-space: nowrap;
+    }
+    .hist-diff {
+        display: flex;
+        align-items: stretch;
+        gap: 0.35rem;
+        min-width: 220px;
+    }
+    .hist-val {
+        flex: 1;
+        min-width: 0;
+        padding: 0.35rem 0.5rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        line-height: 1.35;
+        word-break: break-word;
+    }
+    .hist-val-old {
+        background: #fff1f2;
+        color: #9f1239;
+        border: 1px solid #fecdd3;
+    }
+    .hist-val-new {
+        background: #ecfdf5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+    }
+    .hist-diff-arrow {
+        display: flex;
+        align-items: center;
+        color: #94a3b8;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+    }
+    .hist-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+        align-items: flex-start;
+    }
+    .hist-meta-user {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #334155;
+    }
+    .hist-meta-user i {
+        color: #64748b;
+        font-size: 0.85rem;
+    }
+    .hist-meta-date {
+        font-size: 0.75rem;
+        color: #94a3b8;
+    }
+    .hist-entidade {
+        font-size: 0.84rem;
+        color: #334155;
+        max-width: 140px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        display: inline-block;
+    }
+    .hist-count-visible {
+        font-weight: 600;
+        color: #0d6efd;
+    }
+    .hist-tab-pane { display: none; }
+    .hist-tab-pane.active { display: block; }
+    .vd-table thead th.text-center,
+    .vd-table tbody td.text-center {
+        text-align: center;
+    }
+    @media (max-width: 992px) {
+        .hist-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="vd-dashboard">
+  <div class="vd-layout hist-layout">
+    <aside class="vd-sidebar">
+      <div class="vd-panel">
+        <h2 class="vd-panel-title">Filtros</h2>
+        <div class="vd-field">
+          <label for="hist-filter-busca">Buscar</label>
+          <input type="text" id="hist-filter-busca" placeholder="Campo, entidade, valor...">
+        </div>
+        <div class="vd-field">
+          <label for="hist-filter-usuario">Usuário</label>
+          <select id="hist-filter-usuario">
+            <option value="">Todos</option>
+          </select>
+        </div>
+        <div class="vd-field">
+          <label>Período da alteração</label>
+          <div class="vd-periodo">
+            <input type="date" id="hist-filter-data-inicio" aria-label="Data inicial">
+            <span class="vd-periodo-sep">–</span>
+            <input type="date" id="hist-filter-data-fim" aria-label="Data final">
+          </div>
+        </div>
+        <div class="vd-filter-actions">
+          <button type="button" class="vd-btn-primary" id="hist-btn-aplicar">
+            <i class="bi bi-funnel"></i> Aplicar filtros
+          </button>
+          <button type="button" class="vd-btn-outline" id="hist-btn-limpar">
+            <i class="bi bi-arrow-counterclockwise"></i> Limpar filtros
+          </button>
+        </div>
+      </div>
+
+      <div class="vd-panel">
+        <h2 class="vd-panel-title">Resumo</h2>
+        <ul class="vd-resumo-list">
+          {% if historicos_por_tela %}
+            {% for tela, dados in historicos_por_tela.items %}
+            <li class="vd-resumo-item">
+              <span class="vd-resumo-left">
+                {% if tela == 'movimentacao' %}<i class="bi bi-arrow-left-right vd-resumo-icon wip"></i>
+                {% elif tela == 'metodo_rateio' %}<i class="bi bi-pie-chart-fill vd-resumo-icon pend"></i>
+                {% elif tela == 'cadastro' %}<i class="bi bi-building vd-resumo-icon done"></i>
+                {% else %}<i class="bi bi-download vd-resumo-icon" style="color:#0d6efd;"></i>{% endif %}
+                {{ dados.label }}
+              </span>
+              <span class="vd-resumo-count">{{ dados.itens|length }}</span>
+            </li>
+            {% endfor %}
+            <li class="vd-resumo-item vd-resumo-total">
+              <span>Total</span>
+              <span class="vd-resumo-count">{{ total_historicos }}</span>
+            </li>
+          {% else %}
+            <li class="vd-resumo-item vd-resumo-total">
+              <span>Total</span>
+              <span class="vd-resumo-count">0</span>
+            </li>
+          {% endif %}
+        </ul>
+      </div>
+    </aside>
+
+    <main class="vd-main">
+      <div class="vd-main-header">
+        <div class="vd-main-header-left">
+          <div class="vd-main-icon">
+            <i class="bi bi-clock-history"></i>
+          </div>
+          <div>
+            <h1 class="vd-main-title">Histórico de alterações</h1>
+            <p class="vd-main-meta mb-0">
+              Registro das mudanças realizadas no sistema
+              {% if total_historicos %} · {{ total_historicos }} registro(s){% endif %}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {% if historicos_por_tela %}
+      <div class="vd-tabs" role="tablist">
+        {% for tela, dados in historicos_por_tela.items %}
+        <button type="button"
+                class="vd-tab{% if forloop.first %} active{% endif %}"
+                data-tela="{{ tela }}"
+                role="tab"
+                aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">
+          {% if tela == 'movimentacao' %}<i class="bi bi-arrow-left-right"></i>
+          {% elif tela == 'metodo_rateio' %}<i class="bi bi-pie-chart"></i>
+          {% elif tela == 'cadastro' %}<i class="bi bi-building"></i>
+          {% else %}<i class="bi bi-download"></i>{% endif %}
+          {{ dados.label }}
+          <span class="vd-tab-badge">{{ dados.itens|length }}</span>
+        </button>
+        {% endfor %}
+      </div>
+
+      {% for tela, dados in historicos_por_tela.items %}
+        {% if tela == 'movimentacao' %}    
+            <div class="hist-tab-pane{% if forloop.first %} active{% endif %}" data-tela="{{ tela }}" role="tabpanel">
+                <div class="vd-table-wrap">
+                <table class="vd-table hist-table">
+                    <thead>
+                    <tr>
+                        <th class="text-center">Período</th>
+                        <th class="text-center">Participante titular</th>
+                        <th class="text-center">Entidade Pai</th>
+                        <th class="text-center">Entidade Filho</th>
+                        <th class="text-center">Campo</th>
+                        <th class="text-center">Alteração</th>
+                        <th class="text-center">Quando</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for hist in dados.itens %}
+                    <tr data-row
+                        data-busca="{{ hist.campo }} {{ hist.entidade_pai }} {{ hist.entidade_titular }} {{ hist.prod_titular }} {{ hist.valor_antigo }} {{ hist.valor_novo }} {% if hist.usuario %}{{ hist.usuario.username }}{% endif %}"
+                        data-usuario="{% if hist.usuario %}{{ hist.usuario.username|lower }}{% endif %}"
+                        data-data="{{ hist.data_alteracao|date:'Y-m-d' }}">
+                        <td class="text-center">
+                        {% if hist.mes_sped or hist.ano_sped %}
+                        <span class="hist-periodo">
+                            {{ hist.mes_sped|default:"—" }}/{{ hist.ano_sped|default:"—" }}
+                        </span>
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
+                        </td>
+                        <td class="text-center">
+                        <span class="hist-entidade" title="{{ hist.entidade_pai|default:'' }}">{{ hist.entidade_pai|default:"—" }}</span>
+                        </td>
+                        <td class="text-center">
+                        <span class="hist-entidade" title="{{ hist.entidade_titular|default:'' }}">{{ hist.entidade_titular|default:"—" }}</span>
+                        </td>
+                        <td class="text-center">{{ hist.prod_titular|default:"—" }}</td>
+                        <td class="text-center"><span class="hist-campo">{{ hist.campo }}</span></td>
+                        <td>
+                        <div class="hist-diff">
+                            <span class="hist-val hist-val-old" title="Valor antigo">{{ hist.valor_antigo|default:"—" }}</span>
+                            <span class="hist-diff-arrow" aria-hidden="true"><i class="bi bi-arrow-right"></i></span>
+                            <span class="hist-val hist-val-new" title="Valor novo">{{ hist.valor_novo|default:"—" }}</span>
+                        </div>
+                        </td>
+                        <td>
+                        <div class="hist-meta" style="display: flex; flex-direction: column; align-items: center;">
+                            <span class="hist-meta-user" style="text-align: center;">
+                            <i class="bi bi-person-circle"></i>
+                            {% if hist.usuario %}{{ hist.usuario.username }}{% else %}Sistema{% endif %}
+                            </span>
+                            <span class="hist-meta-date" style="text-align: center;">{{ hist.data_alteracao|date:"d/m/Y H:i" }}</span>
+                        </div>
+                        </td>
+        
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                <div class="vd-empty hist-empty-filter" hidden>
+                    <i class="bi bi-search"></i>
+                    Nenhum registro corresponde aos filtros.
+                </div>
+                </div>
+                <div class="vd-footer">
+                <span>
+                    Exibindo <span class="hist-count-visible">{{ dados.itens|length }}</span>
+                    de {{ dados.itens|length }} registro(s)
+                </span>
+                </div>
+            </div>
+        {% endif %}
+      {% endfor %}
+
+      {% else %}
+      <div class="vd-empty">
+        <i class="bi bi-folder2-open"></i>
+        Nenhum histórico registrado ainda.
+      </div>
+      {% endif %}
+    </main>
+  </div>
+</div>
+
+<script>
+(function () {
+    var tabs = document.querySelectorAll('.vd-tab[data-tela]');
+    var panes = document.querySelectorAll('.hist-tab-pane');
+    var buscaInput = document.getElementById('hist-filter-busca');
+    var usuarioSelect = document.getElementById('hist-filter-usuario');
+    var dataInicio = document.getElementById('hist-filter-data-inicio');
+    var dataFim = document.getElementById('hist-filter-data-fim');
+    var btnAplicar = document.getElementById('hist-btn-aplicar');
+    var btnLimpar = document.getElementById('hist-btn-limpar');
+    function activePane() {
+        return document.querySelector('.hist-tab-pane.active');
+    }
+
+    function populateUsuarios() {
+        if (!usuarioSelect) return;
+        var seen = {};
+        document.querySelectorAll('.hist-table tbody tr[data-usuario]').forEach(function (row) {
+            var u = (row.getAttribute('data-usuario') || '').trim();
+            if (u && !seen[u]) {
+                seen[u] = true;
+                var opt = document.createElement('option');
+                opt.value = u;
+                var userEl = row.querySelector('.hist-meta-user');
+                opt.textContent = userEl ? userEl.textContent.trim() : u;
+                usuarioSelect.appendChild(opt);
+            }
+        });
+    }
+
+    function applyFilters() {
+        var pane = activePane();
+        if (!pane) return;
+
+        var q = (buscaInput && buscaInput.value || '').trim().toLowerCase();
+        var usuario = (usuarioSelect && usuarioSelect.value || '').toLowerCase();
+        var ini = dataInicio && dataInicio.value || '';
+        var fim = dataFim && dataFim.value || '';
+
+        var rows = pane.querySelectorAll('tbody tr[data-row]');
+        var visible = 0;
+
+        rows.forEach(function (row) {
+            var ok = true;
+            var busca = (row.getAttribute('data-busca') || '').toLowerCase();
+            var rowUser = (row.getAttribute('data-usuario') || '').toLowerCase();
+            var rowDate = row.getAttribute('data-data') || '';
+
+            if (q && busca.indexOf(q) === -1) ok = false;
+            if (usuario && rowUser !== usuario) ok = false;
+            if (ini && rowDate && rowDate < ini) ok = false;
+            if (fim && rowDate && rowDate > fim) ok = false;
+
+            row.classList.toggle('vd-filtered-out', !ok);
+            if (ok) visible += 1;
+        });
+
+        var empty = pane.querySelector('.hist-empty-filter');
+        var table = pane.querySelector('.hist-table');
+        if (empty && table) {
+            var none = visible === 0;
+            empty.hidden = !none;
+            table.style.display = none ? 'none' : '';
+        }
+
+        var countEl = pane.querySelector('.hist-count-visible');
+        if (countEl) countEl.textContent = visible;
+    }
+
+    tabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+            var tela = tab.getAttribute('data-tela');
+            tabs.forEach(function (t) {
+                t.classList.remove('active');
+                t.setAttribute('aria-selected', 'false');
+            });
+            panes.forEach(function (p) { p.classList.remove('active'); });
+            tab.classList.add('active');
+            tab.setAttribute('aria-selected', 'true');
+            panes.forEach(function (panel) {
+                if (panel.getAttribute('data-tela') === tela) {
+                    panel.classList.add('active');
+                }
+            });
+            applyFilters();
+        });
+    });
+
+    if (btnAplicar) btnAplicar.addEventListener('click', applyFilters);
+    if (buscaInput) {
+        buscaInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') applyFilters();
+        });
+    }
+    if (btnLimpar) {
+        btnLimpar.addEventListener('click', function () {
+            if (buscaInput) buscaInput.value = '';
+            if (usuarioSelect) usuarioSelect.value = '';
+            if (dataInicio) dataInicio.value = '';
+            if (dataFim) dataFim.value = '';
+            applyFilters();
+        });
+    }
+
+    populateUsuarios();
+})();
+</script>
+{% endblock %}

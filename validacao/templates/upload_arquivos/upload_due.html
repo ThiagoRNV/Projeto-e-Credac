@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% block content %}
+{% load static %}
+
+<div class="container-fluid rnv-dashboard">
+  <div class="row justify-content-center">
+    <div class="col-12" style="max-width: 740px; margin: 0 auto;">
+      <div class="rnv-card p-0 mb-3" data-bs-toggle="collapse" data-bs-target="#avisosDueCollapse" style="cursor: pointer;">
+        <div class="rnv-card-body d-flex justify-content-center align-items-center py-2">
+          <span class="fw-semibold text-dark small d-flex align-items-center gap-2">
+            <i class="bi bi-info-circle-fill text-primary" style="font-size: 1.2rem;"></i>
+            Avisos importantes antes de processar o arquivo DUE abaixo
+          </span>
+        </div>
+        <div class="collapse" id="avisosDueCollapse">
+          <div class="rnv-card-body pt-0 pb-2 px-3">
+            <p class="text-center small text-muted fw-bold mb-2">
+              <i class="bi bi-dot"></i> <b>Layout:</b> as informações devem começar nas colunas <b>A</b> ou <b>B</b>.
+            </p>
+            <p class="text-center small text-muted fw-bold mb-0">
+              <i class="bi bi-dot"></i> Certifique-se de que todas as notas contêm data.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <form method="POST" enctype="multipart/form-data" action="{% url 'processar_planilha_due' %}" id="formDue">
+        {% csrf_token %}
+
+        <div class="rnv-card p-0" id="dueCard" style="cursor: pointer; min-height: 140px;">
+          <div class="rnv-card-body d-flex flex-column justify-content-center align-items-center py-4">
+            <div class="mb-2 d-flex align-items-center gap-2">
+              <div class="rnv-menu-card-icon">
+                <i class="bi bi-file-earmark-arrow-up-fill"></i>
+              </div>
+              <span class="fw-semibold text-dark fs-6">Anexar DUE</span>
+            </div>
+            <p class="fw-semibold text-secondary mb-1 small">Selecione o arquivo DUE (.xlsx)</p>
+            <small class="text-muted d-block">Clique ou arraste o arquivo aqui</small>
+            <input type="file" id="due_file" name="due_file" accept=".xlsx" required style="display: none;">
+            <div id="dueInfo" class="mt-2 d-none text-truncate small text-primary"></div>
+            <div id="dueFileError" class="text-danger mt-2 d-none small">Por favor, selecione o arquivo DUE (.xlsx).</div>
+          </div>
+        </div>
+
+        <div class="text-center mt-4">
+          <button type="submit" class="rnv-action-btn btn btn-outline-primary px-4 py-2" id="btnProcessDue">
+            <span class="spinner-border spinner-border-sm me-2 d-none" id="dueSpinner"></span>
+            <span id="dueBtnText">Processar DUE</span>
+          </button>
+        </div>
+
+        {% if messages %}
+          {% for message in messages %}
+            <div class="rnv-alert alert alert-{{ message.tags|default:'info' }} mt-3 shadow-sm">
+              {% if message.tags == 'error' %}<i class="bi bi-exclamation-triangle-fill me-2"></i>
+              {% elif message.tags == 'success' %}<i class="bi bi-check-circle-fill me-2"></i>
+              {% elif message.tags == 'warning' %}<i class="bi bi-exclamation-triangle-fill me-2"></i>
+              {% else %}<i class="bi bi-info-circle me-2"></i>{% endif %}
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        {% if processed_due %}
+        <div class="rnv-alert alert alert-success mt-3 shadow-sm">
+          <i class="bi bi-check-circle-fill me-2"></i> Arquivo DUE processado com sucesso!
+        </div>
+        <div class="text-center mt-2">
+          <a href="{% url 'view_dados' %}?empresa_id={{ empresa_id }}&data_sped={{ data_inicio_sped }}" class="rnv-action-btn btn btn-outline-primary">
+            Visualizar Dados <i class="bi bi-arrow-right"></i>
+          </a>
+        </div>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+.rnv-card[data-bs-toggle="collapse"]:hover { box-shadow: 0 4px 20px #00335525; }
+#dueCard:hover { box-shadow: 0 4px 20px #00335525; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const dueFileInput = document.getElementById('due_file');
+  const dueBtn = document.getElementById('btnProcessDue');
+  const dueCard = document.getElementById('dueCard');
+  const dueInfo = document.getElementById('dueInfo');
+  const dueFileError = document.getElementById('dueFileError');
+  const formDue = document.getElementById('formDue');
+
+  if (dueCard && dueFileInput) {
+    dueCard.addEventListener('click', function(e) {
+      if (!e.target.closest('button')) dueFileInput.click();
+    });
+    ['dragover', 'dragleave', 'drop'].forEach(function(ev) {
+      dueCard.addEventListener(ev, function(e) {
+        e.preventDefault();
+        if (ev === 'dragover') { dueCard.style.transform = 'translateY(-1.5px)'; dueCard.classList.add('shadow'); }
+        else { dueCard.style.transform = ''; dueCard.classList.remove('shadow'); }
+      });
+    });
+    dueCard.addEventListener('drop', function(e) {
+      if (e.dataTransfer.files.length > 0) {
+        dueFileInput.files = e.dataTransfer.files;
+        dueFileInput.dispatchEvent(new Event('change'));
+      }
+    });
+  }
+
+  if (dueFileInput) {
+    dueFileInput.addEventListener('change', function() {
+      if (this.files && this.files.length > 0) {
+        if (dueInfo) { dueInfo.textContent = '📄 ' + this.files[0].name; dueInfo.classList.remove('d-none'); }
+        if (dueFileError) dueFileError.classList.add('d-none');
+      } else { if (dueInfo) dueInfo.classList.add('d-none'); }
+    });
+  }
+
+  if (formDue) {
+    formDue.addEventListener('submit', function() {
+      var s = document.getElementById('dueSpinner'), t = document.getElementById('dueBtnText');
+      if (s) s.classList.remove('d-none');
+      if (t) t.textContent = 'Processando...';
+      if (dueBtn) dueBtn.disabled = true;
+    });
+  }
+});
+</script>
+{% endblock %}

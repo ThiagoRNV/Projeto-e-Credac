@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="container-fluid rnv-dashboard">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <span class="rnv-section-title ms-2"><i class="bi bi-sliders me-2"></i> Regras de lançamento</span>
+        <div class="d-flex" style="gap: 0.6rem;">
+            <button type="button" class="btn btn-outline-dark">Salvar alterações</button>
+        </div>
+    </div>
+
+    <div class="rnv-card p-0">
+        <div class="rnv-card-body p-4">
+            <form method="POST" action="{% url 'regras_cod_lan' %}" class="row g-3 align-items-end">
+                {% csrf_token %}
+                <div class="row w-100">
+                    <div class="col-md-8 d-flex align-items-end">
+                        <div class="d-flex flex-column" style="margin-bottom: 0;">
+                            <label class="form-label fw-semibold mb-1">Empresa</label>
+                            <select class="form-select rnv-form-select me-4" style="width: 600px;" name="empresa_id" required>
+                                <option value="" selected disabled>Selecione a empresa</option>
+                                {% for empresa in empresas %}
+                                    <option value="{{ empresa.id }}" {% if empresa_id == empresa.id %}selected{% endif %}>{{ empresa.razao_social }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="rnv-action-btn btn btn-primary ms-3">
+                            <i class="bi bi-search me-1"></i> Buscar
+                        </button>
+                    </div>
+                    <div class="col-md-4 d-flex flex-column align-items-center">
+                        <p class="fw-semibold text-center mb-2">Filtros</p>
+                        <div class="form-check d-flex align-items-center mb-2">
+                            <input type="checkbox" id="filtro-codigo-lancamento" class="form-check-input me-2" style="width: 20px;">
+                            <label for="filtro-codigo-lancamento" class="form-check-label fw-semibold">Em branco</label>
+                        </div>
+                        <div class="d-flex align-items-end justify-content-center">
+                            <input type="text" id="filtro-participante" class="form-control me-2" placeholder="Digite o participante" style="width: 200px;">
+                            <input type="text" id="filtro-cfop" class="form-control" placeholder="Digite o CFOP" style="width: 200px;">
+                        </div>
+                    </div>
+                   
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    {% if part %}
+    <div class="rnv-card p-0">
+        <div class="rnv-card-body p-4">
+            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                <table class="table table-hover align-middle table-bordered text-center" id="tabela-regras">
+                    <thead class="table-light">
+                        <tr>
+                            <th></th>
+                            <th style="font-weight: bold;">
+                                <div class="d-flex justify-content-center">
+                                    <select name="codigo_lancamento_geral" id="codigo_lancamento_geral" class="form-select text-center" style="width: 200px;">
+                                        <option value="" selected disabled>Selecione o código de lançamento</option>
+                                        {% for codigo in decodigos %}
+                                            <option value="{{ codigo }}">{{ codigo }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </th>
+                            <th style="font-weight: bold; text-align: center;">
+                                <button type="button" class="btn btn-primary" onclick="aplicarCodigo()">Aplicar</button>
+                            </th>
+                        </tr>
+                        <tr>
+                                <th style="position: sticky; top: 0; z-index: 10;">Participante</th>
+                                <th style="position: sticky; top: 0; z-index: 10;">CFOP</th>
+                                <th style="position: sticky; top: 0; z-index: 10;">Código</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if part %}    
+                            {% for p in part %}
+                            <tr>
+                                <td>{{ p.nome }}</td>
+                                <td>{{ p.cfop }}</td>
+                                <td style="width: 100px;"><input type="text" name="codigo_lancamento" class="form-control text-center" value="{{ p.codigo_lancamento }}" style="width: 100px;"></td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="3" class="text-center">Olá</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% if part %}
+<script>
+    const tabela = document.getElementById('tabela-regras');
+    const filtroParticipante = document.getElementById('filtro-participante');
+    const filtroCfop = document.getElementById('filtro-cfop');
+    const filtroEmBranco = document.getElementById('filtro-codigo-lancamento');
+
+    function valorCodigoRow(row) {
+        const cell = row.cells[2];
+        if (!cell) return '';
+        const inp = cell.querySelector("input[name='codigo_lancamento']");
+        return (inp ? inp.value : (cell.textContent || '')).trim();
+    }
+
+    function filtrarRegras() {
+        const participanteVal = (filtroParticipante.value || '').toLowerCase().trim();
+        const cfopVal = (filtroCfop.value || '').replace(/\s/g, '').toLowerCase();
+        const soEmBranco = filtroEmBranco.checked;
+
+        const tbody = tabela.tBodies[0];
+        if (!tbody) return;
+
+        Array.from(tbody.rows).forEach(row => {
+            const participante = (row.cells[0].textContent || '').toLowerCase();
+            const cfop = (row.cells[1].textContent || '').replace(/\s/g, '').toLowerCase();
+            const codigo = valorCodigoRow(row);
+
+            const matchParticipante = !participanteVal || participante.includes(participanteVal);
+            const matchCfop = !cfopVal || cfop.includes(cfopVal);
+            const matchEmBranco = !soEmBranco || codigo === '';
+
+            row.style.display = (matchParticipante && matchCfop && matchEmBranco) ? '' : 'none';
+        });
+    }
+
+    filtroParticipante.addEventListener('input', filtrarRegras);
+    filtroCfop.addEventListener('input', filtrarRegras);
+    filtroEmBranco.addEventListener('change', filtrarRegras);
+
+    function aplicarCodigo() {
+        const codigo = document.getElementById('codigo_lancamento_geral').value;
+        const tbody = tabela.tBodies[0];
+        if (!tbody) return;
+        Array.from(tbody.rows).forEach(function (row) {
+            if (row.style.display === 'none') return;
+            const inp = row.querySelector("input[name='codigo_lancamento']");
+            if (inp) inp.value = codigo;
+        });
+        filtrarRegras();
+    }
+
+    document.querySelectorAll("input[name='codigo_lancamento']").forEach(function (inp) {
+        inp.addEventListener('input', filtrarRegras);
+    });
+</script>
+{% endif %}
+
+{% endblock %}

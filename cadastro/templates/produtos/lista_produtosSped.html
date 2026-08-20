@@ -1,0 +1,675 @@
+{% extends 'base.html' %}
+{% block content %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/validacao_dados.css' %}">
+<link rel="stylesheet" href="{% static 'css/listagem_prod.css' %}">
+
+<div class="vd-dashboard" id="containerCadastro">
+  {% if messages %}
+  <div class="vd-messages">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show py-2 mb-2" role="alert" style="font-size:0.87rem;">
+      {% if message.tags == 'error' %}<i class="bi bi-x-circle me-2"></i>
+      {% elif message.tags == 'success' %}<i class="bi bi-check-circle me-2"></i>
+      {% elif message.tags == 'warning' %}<i class="bi bi-exclamation-triangle me-2"></i>
+      {% else %}<i class="bi bi-info-circle me-2"></i>{% endif %}
+      {{ message }}
+      <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert" aria-label="Fechar"></button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="vd-layout">
+    <aside class="vd-sidebar">
+      <div class="vd-panel">
+        <h2 class="vd-panel-title">Filtros</h2>
+        <div class="vd-field">
+          <label for="lp-filter-empresa">Empresa</label>
+          <select id="lp-filter-empresa" name="f0" class="filter-input">
+            <option value="">Todas</option>
+            {% for empresa in empresas %}
+              <option value="{{ empresa.razao_social }}" {% if filtros.f0 == empresa.razao_social %}selected{% endif %}>
+                {{ empresa.razao_social }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="vd-field">
+          <label for="lp-filter-codigo">Código</label>
+          <input type="text" id="lp-filter-codigo" name="f1" class="filter-input" placeholder="Buscar código..." value="{{ filtros.f1|default:'' }}">
+        </div>
+        <div class="vd-field">
+          <label for="lp-filter-descricao">Descrição</label>
+          <input type="text" id="lp-filter-descricao" name="f2" class="filter-input" placeholder="Buscar descrição..." value="{{ filtros.f2|default:'' }}">
+        </div>
+        <div class="vd-field">
+          <label for="lp-filter-ncm">NCM</label>
+          <input type="text" id="lp-filter-ncm" name="f3" class="filter-input" placeholder="Buscar NCM..." value="{{ filtros.f3|default:'' }}">
+        </div>
+        <div class="vd-field" style="display: flex; gap: 0.5rem; align-items: flex-end;">
+          <div style="flex:1;">
+            <label for="lp-filter-mes">Mês</label>
+            <select id="lp-filter-mes" name="f4" class="filter-input">
+              <option value="">Todos</option>
+              {% for mes in meses %}
+                <option value="{{ mes }}" {% if filtros.f4 == mes %}selected{% endif %}>{{ mes }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div style="flex:1;">
+            <label for="lp-filter-ano">Ano</label>
+            <select id="lp-filter-ano" name="f5" class="filter-input">
+              <option value="">Todos</option>
+              {% for ano in anos %}
+                <option value="{{ ano }}" {% if filtros.f5 == ano %}selected{% endif %}>{{ ano }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="vd-filter-actions">
+          <button type="button" class="vd-btn-primary" id="lp-btn-aplicar">
+            <i class="bi bi-funnel"></i> Aplicar filtros
+          </button>
+          <button type="button" class="vd-btn-outline" id="lp-btn-limpar">
+            <i class="bi bi-arrow-counterclockwise"></i> Limpar filtros
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="vd-main">
+      <div class="vd-main-header">
+        <div class="vd-main-header-left">
+          <div class="vd-main-icon">
+            <i class="bi bi-box-seam"></i>
+          </div>
+          <div>
+            <h1 class="vd-main-title">Cadastro de Itens SPED</h1>
+            <p class="vd-main-meta mb-0">{{ produtos.paginator.count }} produto(s) cadastrado(s)</p>
+          </div>
+        </div>
+        <button type="button" class="vd-btn-refresh" data-bs-toggle="modal" data-bs-target="#modalCadastroitem">
+          <i class="bi bi-plus-circle"></i> Cadastrar Item
+        </button>
+      </div>
+
+      <div class="vd-table-wrap lp-produtos-table-wrap">
+        <table class="vd-table" id="tabelaProdutos">
+          <thead>
+            <tr>
+              <th class='text-center'>Empresa</th>
+              <th class='text-center'>Código</th>
+              <th class='text-center'>Descrição</th>
+              <th class='text-center'>NCM</th>
+              <th class='text-center'>Mês</th>
+              <th class='text-center'>Ano</th>
+              <th class='text-center'>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for produto in produtos %}
+            <tr id="produto-row-{{ produto.id }}" data-produto-id="{{ produto.id }}">
+              <td class="text-center">
+                <span class="vd-empresa-nome lp-empresa-nome"
+                      title="{{ produto.empresa.razao_social|default:'---' }}">
+                  {{ produto.empresa.razao_social|default:"---"|truncatewords:1|cut:" ..." }}
+                </span>
+              </td>
+              <td class="text-center">{{ produto.codigo_prod|default:"---" }}</td>
+              <td class="text-center">{{ produto.descricao_prod|default:"---"|truncatechars:40 }}</td>
+              <td class="text-center">{{ produto.ncm|default:"---" }}</td>
+              <td class="text-center">{{ produto.mes_ref|default:"---" }}</td>
+              <td class="text-center">{{ produto.ano_sped|default:"---" }}</td>
+              <td class="text-center">
+                <div class="vd-acoes" style="display: flex; justify-content: center;">
+                  <button type="button" class="vd-acao-btn vd-acao-ver"
+                          data-bs-toggle="modal" data-bs-target="#modalProduto{{ produto.id }}" title="Editar">
+                    <i class="bi bi-pencil-square"></i>
+                  </button>
+                  <button type="button" class="vd-acao-btn vd-acao-finalizar"
+                          data-bs-toggle="modal" data-bs-target="#modalExcluir{{ produto.id }}" title="Excluir"
+                          style="color:#dc3545; border-color:#dc3545;">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" class="text-center">
+                <div class="vd-empty">
+                  <i class="bi bi-inbox"></i>
+                  Nenhum produto cadastrado.
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="vd-footer">
+        <span>
+          {% if produtos.paginator.count %}
+            Exibindo {{ produtos.start_index }} a {{ produtos.end_index }} de {{ produtos.paginator.count }} registros
+          {% else %}
+            Nenhum registro encontrado
+          {% endif %}
+        </span>
+        <div class="vd-pagination">
+          <div class="vd-page-btns">
+            {% if produtos.has_previous %}
+            <a class="vd-page-btn" href="?page={{ produtos.previous_page_number }}{% if current_query %}&{{ current_query }}{% endif %}" aria-label="Anterior">
+              <i class="bi bi-chevron-left"></i>
+            </a>
+            {% else %}
+            <span class="vd-page-btn" style="opacity:0.45; pointer-events:none;"><i class="bi bi-chevron-left"></i></span>
+            {% endif %}
+
+            <span class="vd-page-btn active">{{ produtos.number }}</span>
+
+            {% if produtos.has_next %}
+            <a class="vd-page-btn" href="?page={{ produtos.next_page_number }}{% if current_query %}&{{ current_query }}{% endif %}" aria-label="Próxima">
+              <i class="bi bi-chevron-right"></i>
+            </a>
+            {% else %}
+            <span class="vd-page-btn" style="opacity:0.45; pointer-events:none;"><i class="bi bi-chevron-right"></i></span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+        <!-- Modal Cadastro de Itens SPED -->
+        <div class="modal fade modal-produto-sped" id="modalCadastroitem" tabindex="-1" aria-labelledby="modalCadastroitemLabel" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-produto-sped-scroll">
+              <div class="modal-header modal-produto-sped-header">
+                <div class="modal-produto-sped-header-content">
+                  <div class="modal-produto-sped-icon">
+                    <i class="bi bi-plus-lg"></i>
+                  </div>
+                  <div>
+                    <h5 class="modal-title" id="modalCadastroitemLabel">Cadastro Manual de Produto SPED</h5>
+                    <p class="modal-produto-sped-subtitle">Preencha os dados do item para incluir no cadastro</p>
+                  </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+              </div>
+              <div class="modal-body modal-produto-sped-body">
+                <form method="post" action="{% url 'cadastrar_manual' %}" class="form-produto-sped" data-produto-id="">
+                  {% csrf_token %}
+                  <div class="produto-form-layout">
+                  <div class="produto-form-section">
+                    <div class="produto-form-section-title">
+                      <i class="bi bi-building"></i> Empresa e período
+                    </div>
+                  <div class="row g-3">
+                    <div class="col-12">
+                      <label class="form-label">Empresa</label>
+                      <select name="empresa_id" class="form-select" required>
+                        <option value="" selected disabled>Selecione a empresa</option>
+                        {% for empresa in empresas %}
+                          <option value="{{ empresa.id }}"> {{ empresa.razao_social }} </option>
+                        {% empty %}
+                          <option disabled>Nenhuma empresa cadastrada</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label">Data Início SPED</label>
+                      <input type="date" name="data_inicio_sped" class="form-control" required>
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label">Mês referência</label>
+                      <select name="mes_ref" class="form-select" required>
+                        <option value="" selected disabled>Selecione...</option>
+                        {% for mes in meses %}
+                          <option value="{{ mes }}">{{ mes }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                  </div>
+                  </div>
+
+                  <div class="produto-form-section">
+                    <div class="produto-form-section-title">
+                      <i class="bi bi-box-seam"></i> Identificação do produto
+                    </div>
+                  <div class="row g-3">
+                    <div class="col-6">
+                      <label class="form-label">Saldo inicial</label>
+                      <input type="text" class="form-control saldo-inicial" name="saldo_inicial_produto" required>
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label">Saldo final</label>
+                      <input type="text" class="form-control saldo-inicial" name="saldo_final_produto" required>
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label">Código</label>
+                      <input type="text" name="codigo_prod" class="form-control" required>
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label">Unidade</label>
+                      <input type="text" name="unidade" class="form-control" required>
+                    </div>
+                    <div class="col-12">
+                      <label class="form-label">Descrição</label>
+                      <textarea name="descricao_prod" class="form-control" rows="2" maxlength="250" required></textarea>
+                    </div>
+                  </div>
+                  </div>
+
+                  <div class="produto-form-section">
+                    <div class="produto-form-section-title">
+                      <i class="bi bi-tags"></i> Classificação fiscal
+                    </div>
+                  <div class="row g-3">
+                    <div class="col-6">
+                      <label class="form-label">NCM</label>
+                      <input type="text" name="ncm" class="form-control" required>
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label">CEST</label>
+                        <input type="text" name="cest" class="form-control" required>
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label">Tipo Item</label>
+                        <input type="text" name="tipo_item" class="form-control" required>
+                      </div>
+                    <div class="col-12">
+                        <label for="capitulo" class="form-label">Genêro produto</label>
+                            <select id="capitulo" name="genero" class="form-select" required>
+                                <option value="" selected disabled>Selecione um genêro</option>
+                                <option value="00 - Serviço">00 - Serviço</option>
+                                <option value="01 - Animais Vivos">01 - Animais Vivos</option>
+                                <option value="02 - Carnes e Miudezas, Comestíveis">02 - Carnes e Miudezas, Comestíveis</option>
+                                <option value="03 - Peixes e Crustáceos, Moluscos e Outros Invertebrados Aquáticos">03 - Peixes e Crustáceos, Moluscos e Outros Invertebrados Aquáticos</option>
+                                <option value="04 - Leite e Laticínios; Ovos de Aves; Mel Natural; Produtos de Origem Animal Não Especificados">04 - Leite e Laticínios; Ovos de Aves; Mel Natural; Produtos de Origem Animal Não Especificados</option>
+                                <option value="05 - Outros Produtos de Origem Animal Não Especificados">05 - Outros Produtos de Origem Animal Não Especificados</option>
+                                <option value="06 - Plantas Vivas e Produtos de Floricultura">06 - Plantas Vivas e Produtos de Floricultura</option>
+                                <option value="07 - Produtos Hortícolas, Plantas, Raízes e Tubérculos Comestíveis">07 - Produtos Hortícolas, Plantas, Raízes e Tubérculos Comestíveis</option>
+                                <option value="08 - Frutas; Cascas de Cítricos e de Melões">08 - Frutas; Cascas de Cítricos e de Melões</option>
+                                <option value="09 - Café, Chá, Mate e Especiarias">09 - Café, Chá, Mate e Especiarias</option>
+                                <option value="10 - Cereais">10 - Cereais</option>
+                                <option value="11 - Produtos da Indústria de Moagem; Malte; Amidos e Féculas; Glúten de Trigo">11 - Produtos da Indústria de Moagem; Malte; Amidos e Féculas; Glúten de Trigo</option>
+                                <option value="12 - Sementes e Frutos Oleaginosos; Grãos e Plantas Industriais/Medicinais">12 - Sementes e Frutos Oleaginosos; Grãos e Plantas Industriais/Medicinais</option>
+                                <option value="13 - Gomas, Resinas e Outros Sucos e Extratos Vegetais">13 - Gomas, Resinas e Outros Sucos e Extratos Vegetais</option>
+                                <option value="14 - Matérias Vegetais para Entrançar e Outros Produtos de Origem Vegetal">14 - Matérias Vegetais para Entrançar e Outros Produtos de Origem Vegetal</option>
+                                <option value="15 - Gorduras e Óleos Animais ou Vegetais; Ceras de Origem Animal ou Vegetal">15 - Gorduras e Óleos Animais ou Vegetais; Ceras de Origem Animal ou Vegetal</option>
+                                <option value="16 - Preparações de Carne, de Peixes ou de Crustáceos">16 - Preparações de Carne, de Peixes ou de Crustáceos</option>
+                                <option value="17 - Açúcares e Produtos de Confeitaria">17 - Açúcares e Produtos de Confeitaria</option>
+                                <option value="18 - Cacau e Suas Preparações">18 - Cacau e Suas Preparações</option>
+                                <option value="19 - Preparações à Base de Cereais, Farinhas, Amidos, Féculas ou Leite">19 - Preparações à Base de Cereais, Farinhas, Amidos, Féculas ou Leite</option>
+                                <option value="20 - Preparações de Produtos Hortícolas, Frutas ou Outras Partes de Plantas">20 - Preparações de Produtos Hortícolas, Frutas ou Outras Partes de Plantas</option>
+                                <option value="21 - Preparações Alimentícias Diversas">21 - Preparações Alimentícias Diversas</option>
+                                <option value="22 - Bebidas, líquidos alcoólicos e vinagres">22 - Bebidas, líquidos alcoólicos e vinagres</option>
+                                <option value="23 - Resíduos das indústrias alimentares; alimentos para animais">23 - Resíduos das indústrias alimentares; alimentos para animais</option>
+                                <option value="24 - Fumo (tabaco) e seus sucedâneos, manufaturados">24 - Fumo (tabaco) e seus sucedâneos, manufaturados</option>
+                                <option value="25 - Sal; enxofre; terras e pedras; gesso, cal e cimento">25 - Sal; enxofre; terras e pedras; gesso, cal e cimento</option>
+                                <option value="26 - Minérios, escórias e cinzas">26 - Minérios, escórias e cinzas</option>
+                                <option value="27 - Combustíveis minerais, óleos minerais e produtos da sua destilação">27 - Combustíveis minerais, óleos minerais e produtos da sua destilação</option>
+                                <option value="28 - Produtos químicos inorgânicos">28 - Produtos químicos inorgânicos</option>
+                                <option value="29 - Produtos químicos orgânicos">29 - Produtos químicos orgânicos</option>
+                                <option value="30 - Produtos farmacêuticos">30 - Produtos farmacêuticos</option>
+                                <option value="31 - Adubos ou fertilizantes">31 - Adubos ou fertilizantes</option>
+                                <option value="32 - Pigmentos, tintas, vernizes e matérias corantes">32 - Pigmentos, tintas, vernizes e matérias corantes</option>
+                                <option value="33 - Óleos essenciais, perfumaria e preparações cosméticas">33 - Óleos essenciais, perfumaria e preparações cosméticas</option>
+                                <option value="34 - Sabões, agentes orgânicos de superfície, preparações de limpeza">34 - Sabões, agentes orgânicos de superfície, preparações de limpeza</option>
+                                <option value="35 - Matérias albuminóides, colas e enzimas">35 - Matérias albuminóides, colas e enzimas</option>
+                                <option value="36 - Pólvoras e explosivos; artigos de pirotecnia">36 - Pólvoras e explosivos; artigos de pirotecnia</option>
+                                <option value="37 - Produtos para fotografia e cinematografia">37 - Produtos para fotografia e cinematografia</option>
+                                <option value="38 - Produtos diversos das indústrias químicas">38 - Produtos diversos das indústrias químicas</option>
+                                <option value="39 - Plásticos e suas obras">39 - Plásticos e suas obras</option>
+                                <option value="40 - Borracha e suas obras">40 - Borracha e suas obras</option>
+                                <option value="41 - Peles (exceto peleteria) e couros">41 - Peles (exceto peleteria) e couros</option>
+                                <option value="42 - Obras de couro e artigos de viagem">42 - Obras de couro e artigos de viagem</option>
+                                <option value="43 - Peleteria e suas obras">43 - Peleteria e suas obras</option>
+                                <option value="44 - Madeira, carvão vegetal e obras de madeira">44 - Madeira, carvão vegetal e obras de madeira</option>
+                                <option value="45 - Cortiça e suas obras">45 - Cortiça e suas obras</option>
+                                <option value="46 - Obras de cestaria">46 - Obras de cestaria</option>
+                                <option value="47 - Pastas de madeira e aparas">47 - Pastas de madeira e aparas</option>
+                                <option value="48 - Papel e cartão e suas obras">48 - Papel e cartão e suas obras</option>
+                                <option value="49 - Livros, jornais e produtos gráficos">49 - Livros, jornais e produtos gráficos</option>
+                                <option value="50 - Seda">50 - Seda</option>
+                                <option value="51 - Lã e pêlos finos ou grosseiros">51 - Lã e pêlos finos ou grosseiros</option>
+                                <option value="52 - Algodão">52 - Algodão</option>
+                                <option value="53 - Outras fibras têxteis vegetais">53 - Outras fibras têxteis vegetais</option>
+                                <option value="54 - Filamentos sintéticos ou artificiais">54 - Filamentos sintéticos ou artificiais</option>
+                                <option value="55 - Fibras sintéticas ou artificiais, descontínuas">55 - Fibras sintéticas ou artificiais, descontínuas</option>
+                                <option value="56 - Falsos tecidos, cordas e artigos de cordoaria">56 - Falsos tecidos, cordas e artigos de cordoaria</option>
+                                <option value="57 - Tapetes e outros revestimentos de piso">57 - Tapetes e outros revestimentos de piso</option>
+                                <option value="58 - Tecidos especiais, bordados e tapeçarias">58 - Tecidos especiais, bordados e tapeçarias</option>
+                                <option value="59 - Tecidos impregnados, revestidos e técnicos">59 - Tecidos impregnados, revestidos e técnicos</option>
+                                <option value="60 - Tecidos de malha">60 - Tecidos de malha</option>
+                                <option value="61 - Vestuário e acessórios de malha">61 - Vestuário e acessórios de malha</option>
+                                <option value="62 - Vestuário e acessórios exceto de malha">62 - Vestuário e acessórios exceto de malha</option>
+                                <option value="63 - Artefatos têxteis confeccionados">63 - Artefatos têxteis confeccionados</option>
+                                <option value="64 - Calçados e partes">64 - Calçados e partes</option>
+                                <option value="65 - Chapéus e partes">65 - Chapéus e partes</option>
+                                <option value="66 - Guarda-chuvas, bengalas e partes">66 - Guarda-chuvas, bengalas e partes</option>
+                                <option value="67 - Penas, flores artificiais e cabelos">67 - Penas, flores artificiais e cabelos</option>
+                                <option value="68 - Obras de pedra, gesso e cimento">68 - Obras de pedra, gesso e cimento</option>
+                                <option value="69 - Produtos cerâmicos">69 - Produtos cerâmicos</option>
+                                <option value="70 - Vidro e suas obras">70 - Vidro e suas obras</option>
+                                <option value="71 - Jóias, pedras preciosas e moedas">71 - Jóias, pedras preciosas e moedas</option>
+                                <option value="72 - Ferro fundido, ferro e aço">72 - Ferro fundido, ferro e aço</option>
+                                <option value="73 - Obras de ferro fundido, ferro ou aço">73 - Obras de ferro fundido, ferro ou aço</option>
+                                <option value="74 - Cobre e suas obras">74 - Cobre e suas obras</option>
+                                <option value="75 - Níquel e suas obras">75 - Níquel e suas obras</option>
+                                <option value="76 - Alumínio e suas obras">76 - Alumínio e suas obras</option>
+                                <option value="77 - (Reservado)">77 - (Reservado)</option>
+                                <option value="78 - Chumbo e suas obras">78 - Chumbo e suas obras</option>
+                                <option value="79 - Zinco e suas obras">79 - Zinco e suas obras</option>
+                                <option value="80 - Estanho e suas obras">80 - Estanho e suas obras</option>
+                                <option value="81 - Outros metais comuns">81 - Outros metais comuns</option>
+                                <option value="82 - Ferramentas e talheres de metais comuns">82 - Ferramentas e talheres de metais comuns</option>
+                                <option value="83 - Obras diversas de metais comuns">83 - Obras diversas de metais comuns</option>
+                                <option value="84 - Máquinas e aparelhos mecânicos">84 - Máquinas e aparelhos mecânicos</option>
+                                <option value="85 - Máquinas, aparelhos e materiais elétricos">85 - Máquinas, aparelhos e materiais elétricos</option>
+                                <option value="86 - Material ferroviário e sinalização">86 - Material ferroviário e sinalização</option>
+                                <option value="87 - Veículos automóveis, tratores e partes">87 - Veículos automóveis, tratores e partes</option>
+                                <option value="88 - Aeronaves e aparelhos espaciais">88 - Aeronaves e aparelhos espaciais</option>
+                                <option value="89 - Embarcações e estruturas flutuantes">89 - Embarcações e estruturas flutuantes</option>
+                                <option value="90 - Instrumentos de óptica, médicos e precisão">90 - Instrumentos de óptica, médicos e precisão</option>
+                                <option value="91 - Aparelhos de relojoaria">91 - Aparelhos de relojoaria</option>
+                                <option value="92 - Instrumentos musicais">92 - Instrumentos musicais</option>
+                                <option value="93 - Armas e munições">93 - Armas e munições</option>
+                                <option value="94 - Móveis, colchões e iluminação">94 - Móveis, colchões e iluminação</option>
+                                <option value="95 - Brinquedos, jogos e artigos para esporte">95 - Brinquedos, jogos e artigos para esporte</option>
+                                <option value="96 - Obras diversas">96 - Obras diversas</option>
+                                <option value="97 - Objetos de arte, coleção e antiguidades">97 - Objetos de arte, coleção e antiguidades</option>
+                                <option value="98 - Reservado para usos especiais">98 - Reservado para usos especiais</option>
+                                <option value="99 - Uso na codificação de processo produtivo">99 - Uso na codificação de processo produtivo</option>
+                            </select>
+                    </div>
+                  </div>
+                  </div>
+                  </div>
+                  <div class="modal-produto-sped-footer">
+                    <button type="button" class="btn modal-produto-sped-btn-cancel" data-bs-dismiss="modal">
+                      Cancelar
+                    </button>
+                    <button type="submit" class="btn modal-produto-sped-btn-save">
+                      Salvar <i class="bi bi-check2 ms-1"></i>
+                    </button>
+                  </div>
+                </form>
+              </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+{% for produto in produtos %}
+<div class="modal fade modal-produto-sped" id="modalProduto{{ produto.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{% url 'editar_produto' produto.id %}" class="form-produto-sped" data-produto-id="{{ produto.id }}" data-genero="{{ produto.genero|default:'' }}">
+                {% csrf_token %}
+                <div class="modal-produto-sped-scroll">
+                <div class="modal-header modal-produto-sped-header modal-produto-sped-header--edit">
+                    <div class="modal-produto-sped-header-content">
+                        <div class="modal-produto-sped-icon">
+                            <i class="bi bi-pencil-square"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title">Editar Produto SPED</h5>
+                            <p class="modal-produto-sped-subtitle">Item {{ produto.codigo_prod|default:"---" }} · {{ produto.descricao_prod|default:"Sem descrição"|truncatechars:45 }}</p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body modal-produto-sped-body">
+                        <div class="produto-form-layout">
+                        <div class="produto-form-section">
+                            <div class="produto-form-section-title">
+                                <i class="bi bi-building"></i> Empresa e período
+                            </div>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label">Empresa</label>
+                                <select name="empresa_id" class="form-select" required>
+                                    <option value="" disabled {% if not produto.empresa_id %}selected{% endif %}>Selecione a empresa</option>
+                                    {% for empresa in empresas %}
+                                    <option value="{{ empresa.id }}" {% if produto.empresa_id == empresa.id %}selected{% endif %}>
+                                        {{ empresa.razao_social }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">Data Início SPED</label>
+                                <input type="date" name="data_inicio_sped" class="form-control" value="{{ produto.data_inicio_sped|date:'Y-m-d' }}">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">Mês referência</label>
+                                <select name="mes_ref" class="form-select">
+                                    <option value="" disabled {% if not produto.mes_ref %}selected{% endif %}>Selecione...</option>
+                                    {% for mes in meses %}
+                                    <option value="{{ mes }}" {% if produto.mes_ref == mes %}selected{% endif %}>{{ mes }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        </div>
+
+                        <div class="produto-form-section">
+                            <div class="produto-form-section-title">
+                                <i class="bi bi-box-seam"></i> Identificação do produto
+                            </div>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <label class="form-label">Saldo inicial</label>
+                                <input type="text" class="form-control saldo-inicial" name="saldo_inicial_produto" value="{{ produto.saldo_inicial_produto|default:'' }}">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">Saldo final</label>
+                                <input type="text" class="form-control saldo-inicial" name="saldo_final_produto" value="{{ produto.saldo_final_produto|default:'' }}">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">Código</label>
+                                <input type="text" name="codigo_prod" class="form-control" value="{{ produto.codigo_prod|default_if_none:'' }}">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">Unidade</label>
+                                <input type="text" name="unidade" class="form-control" value="{{ produto.unidade|default_if_none:'' }}">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Descrição Produto</label>
+                                <textarea name="descricao_prod" class="form-control" rows="2" maxlength="250">{{ produto.descricao_prod|default_if_none:'' }}</textarea>
+                            </div>
+                        </div>
+                        </div>
+
+                        <div class="produto-form-section">
+                            <div class="produto-form-section-title">
+                                <i class="bi bi-tags"></i> Classificação fiscal
+                            </div>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <label class="form-label">NCM</label>
+                                <input type="text" name="ncm" class="form-control" value="{{ produto.ncm|default_if_none:'' }}">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">CEST</label>
+                                <input type="text" name="cest" class="form-control" value="{{ produto.cest|default_if_none:'' }}">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Tipo Item</label>
+                                <input type="text" name="tipo_item" class="form-control" value="{{ produto.tipo_item|default_if_none:'' }}">
+                            </div>
+                            <div class="col-12">
+                                <label for="capitulo{{ produto.id }}" class="form-label">Genêro produto</label>
+                                <select id="capitulo{{ produto.id }}" name="genero" class="form-select">
+                                    <option value="" disabled {% if not produto.genero %}selected{% endif %}>Selecione um genêro</option>
+                                    <option value="00 - Serviço" {% if produto.genero == "00 - Serviço" %}selected{% endif %}>00 - Serviço</option>
+                                    <option value="01 - Animais Vivos" {% if produto.genero == "01 - Animais Vivos" %}selected{% endif %}>01 - Animais Vivos</option>
+                                    <option value="02 - Carnes e Miudezas, Comestíveis" {% if produto.genero == "02 - Carnes e Miudezas, Comestíveis" %}selected{% endif %}>02 - Carnes e Miudezas, Comestíveis</option>
+                                    <option value="03 - Peixes e Crustáceos, Moluscos e Outros Invertebrados Aquáticos" {% if produto.genero == "03 - Peixes e Crustáceos, Moluscos e Outros Invertebrados Aquáticos" %}selected{% endif %}>03 - Peixes e Crustáceos, Moluscos e Outros Invertebrados Aquáticos</option>
+                                    <option value="04 - Leite e Laticínios; Ovos de Aves; Mel Natural; Produtos de Origem Animal Não Especificados" {% if produto.genero == "04 - Leite e Laticínios; Ovos de Aves; Mel Natural; Produtos de Origem Animal Não Especificados" %}selected{% endif %}>04 - Leite e Laticínios; Ovos de Aves; Mel Natural; Produtos de Origem Animal Não Especificados</option>
+                                    <option value="05 - Outros Produtos de Origem Animal Não Especificados" {% if produto.genero == "05 - Outros Produtos de Origem Animal Não Especificados" %}selected{% endif %}>05 - Outros Produtos de Origem Animal Não Especificados</option>
+                                    <option value="06 - Plantas Vivas e Produtos de Floricultura" {% if produto.genero == "06 - Plantas Vivas e Produtos de Floricultura" %}selected{% endif %}>06 - Plantas Vivas e Produtos de Floricultura</option>
+                                    <option value="07 - Produtos Hortícolas, Plantas, Raízes e Tubérculos Comestíveis" {% if produto.genero == "07 - Produtos Hortícolas, Plantas, Raízes e Tubérculos Comestíveis" %}selected{% endif %}>07 - Produtos Hortícolas, Plantas, Raízes e Tubérculos Comestíveis</option>
+                                    <option value="08 - Frutas; Cascas de Cítricos e de Melões" {% if produto.genero == "08 - Frutas; Cascas de Cítricos e de Melões" %}selected{% endif %}>08 - Frutas; Cascas de Cítricos e de Melões</option>
+                                    <option value="09 - Café, Chá, Mate e Especiarias" {% if produto.genero == "09 - Café, Chá, Mate e Especiarias" %}selected{% endif %}>09 - Café, Chá, Mate e Especiarias</option>
+                                    <option value="10 - Cereais" {% if produto.genero == "10 - Cereais" %}selected{% endif %}>10 - Cereais</option>
+                                    <option value="11 - Produtos da Indústria de Moagem; Malte; Amidos e Féculas; Glúten de Trigo" {% if produto.genero == "11 - Produtos da Indústria de Moagem; Malte; Amidos e Féculas; Glúten de Trigo" %}selected{% endif %}>11 - Produtos da Indústria de Moagem; Malte; Amidos e Féculas; Glúten de Trigo</option>
+                                    <option value="12 - Sementes e Frutos Oleaginosos; Grãos e Plantas Industriais/Medicinais" {% if produto.genero == "12 - Sementes e Frutos Oleaginosos; Grãos e Plantas Industriais/Medicinais" %}selected{% endif %}>12 - Sementes e Frutos Oleaginosos; Grãos e Plantas Industriais/Medicinais</option>
+                                    <option value="13 - Gomas, Resinas e Outros Sucos e Extratos Vegetais" {% if produto.genero == "13 - Gomas, Resinas e Outros Sucos e Extratos Vegetais" %}selected{% endif %}>13 - Gomas, Resinas e Outros Sucos e Extratos Vegetais</option>
+                                    <option value="14 - Matérias Vegetais para Entrançar e Outros Produtos de Origem Vegetal" {% if produto.genero == "14 - Matérias Vegetais para Entrançar e Outros Produtos de Origem Vegetal" %}selected{% endif %}>14 - Matérias Vegetais para Entrançar e Outros Produtos de Origem Vegetal</option>
+                                    <option value="15 - Gorduras e Óleos Animais ou Vegetais; Ceras de Origem Animal ou Vegetal" {% if produto.genero == "15 - Gorduras e Óleos Animais ou Vegetais; Ceras de Origem Animal ou Vegetal" %}selected{% endif %}>15 - Gorduras e Óleos Animais ou Vegetais; Ceras de Origem Animal ou Vegetal</option>
+                                    <option value="16 - Preparações de Carne, de Peixes ou de Crustáceos" {% if produto.genero == "16 - Preparações de Carne, de Peixes ou de Crustáceos" %}selected{% endif %}>16 - Preparações de Carne, de Peixes ou de Crustáceos</option>
+                                    <option value="17 - Açúcares e Produtos de Confeitaria" {% if produto.genero == "17 - Açúcares e Produtos de Confeitaria" %}selected{% endif %}>17 - Açúcares e Produtos de Confeitaria</option>
+                                    <option value="18 - Cacau e Suas Preparações" {% if produto.genero == "18 - Cacau e Suas Preparações" %}selected{% endif %}>18 - Cacau e Suas Preparações</option>
+                                    <option value="19 - Preparações à Base de Cereais, Farinhas, Amidos, Féculas ou Leite" {% if produto.genero == "19 - Preparações à Base de Cereais, Farinhas, Amidos, Féculas ou Leite" %}selected{% endif %}>19 - Preparações à Base de Cereais, Farinhas, Amidos, Féculas ou Leite</option>
+                                    <option value="20 - Preparações de Produtos Hortícolas, Frutas ou Outras Partes de Plantas" {% if produto.genero == "20 - Preparações de Produtos Hortícolas, Frutas ou Outras Partes de Plantas" %}selected{% endif %}>20 - Preparações de Produtos Hortícolas, Frutas ou Outras Partes de Plantas</option>
+                                    <option value="21 - Preparações Alimentícias Diversas" {% if produto.genero == "21 - Preparações Alimentícias Diversas" %}selected{% endif %}>21 - Preparações Alimentícias Diversas</option>
+                                    <option value="22 - Bebidas, líquidos alcoólicos e vinagres" {% if produto.genero == "22 - Bebidas, líquidos alcoólicos e vinagres" %}selected{% endif %}>22 - Bebidas, líquidos alcoólicos e vinagres</option>
+                                    <option value="23 - Resíduos das indústrias alimentares; alimentos para animais" {% if produto.genero == "23 - Resíduos das indústrias alimentares; alimentos para animais" %}selected{% endif %}>23 - Resíduos das indústrias alimentares; alimentos para animais</option>
+                                    <option value="24 - Fumo (tabaco) e seus sucedâneos, manufaturados" {% if produto.genero == "24 - Fumo (tabaco) e seus sucedâneos, manufaturados" %}selected{% endif %}>24 - Fumo (tabaco) e seus sucedâneos, manufaturados</option>
+                                    <option value="25 - Sal; enxofre; terras e pedras; gesso, cal e cimento" {% if produto.genero == "25 - Sal; enxofre; terras e pedras; gesso, cal e cimento" %}selected{% endif %}>25 - Sal; enxofre; terras e pedras; gesso, cal e cimento</option>
+                                    <option value="26 - Minérios, escórias e cinzas" {% if produto.genero == "26 - Minérios, escórias e cinzas" %}selected{% endif %}>26 - Minérios, escórias e cinzas</option>
+                                    <option value="27 - Combustíveis minerais, óleos minerais e produtos da sua destilação" {% if produto.genero == "27 - Combustíveis minerais, óleos minerais e produtos da sua destilação" %}selected{% endif %}>27 - Combustíveis minerais, óleos minerais e produtos da sua destilação</option>
+                                    <option value="28 - Produtos químicos inorgânicos" {% if produto.genero == "28 - Produtos químicos inorgânicos" %}selected{% endif %}>28 - Produtos químicos inorgânicos</option>
+                                    <option value="29 - Produtos químicos orgânicos" {% if produto.genero == "29 - Produtos químicos orgânicos" %}selected{% endif %}>29 - Produtos químicos orgânicos</option>
+                                    <option value="30 - Produtos farmacêuticos" {% if produto.genero == "30 - Produtos farmacêuticos" %}selected{% endif %}>30 - Produtos farmacêuticos</option>
+                                    <option value="31 - Adubos ou fertilizantes" {% if produto.genero == "31 - Adubos ou fertilizantes" %}selected{% endif %}>31 - Adubos ou fertilizantes</option>
+                                    <option value="32 - Pigmentos, tintas, vernizes e matérias corantes" {% if produto.genero == "32 - Pigmentos, tintas, vernizes e matérias corantes" %}selected{% endif %}>32 - Pigmentos, tintas, vernizes e matérias corantes</option>
+                                    <option value="33 - Óleos essenciais, perfumaria e preparações cosméticas" {% if produto.genero == "33 - Óleos essenciais, perfumaria e preparações cosméticas" %}selected{% endif %}>33 - Óleos essenciais, perfumaria e preparações cosméticas</option>
+                                    <option value="34 - Sabões, agentes orgânicos de superfície, preparações de limpeza" {% if produto.genero == "34 - Sabões, agentes orgânicos de superfície, preparações de limpeza" %}selected{% endif %}>34 - Sabões, agentes orgânicos de superfície, preparações de limpeza</option>
+                                    <option value="35 - Matérias albuminóides, colas e enzimas" {% if produto.genero == "35 - Matérias albuminóides, colas e enzimas" %}selected{% endif %}>35 - Matérias albuminóides, colas e enzimas</option>
+                                    <option value="36 - Pólvoras e explosivos; artigos de pirotecnia" {% if produto.genero == "36 - Pólvoras e explosivos; artigos de pirotecnia" %}selected{% endif %}>36 - Pólvoras e explosivos; artigos de pirotecnia</option>
+                                    <option value="37 - Produtos para fotografia e cinematografia" {% if produto.genero == "37 - Produtos para fotografia e cinematografia" %}selected{% endif %}>37 - Produtos para fotografia e cinematografia</option>
+                                    <option value="38 - Produtos diversos das indústrias químicas" {% if produto.genero == "38 - Produtos diversos das indústrias químicas" %}selected{% endif %}>38 - Produtos diversos das indústrias químicas</option>
+                                    <option value="39 - Plásticos e suas obras" {% if produto.genero == "39 - Plásticos e suas obras" %}selected{% endif %}>39 - Plásticos e suas obras</option>
+                                    <option value="40 - Borracha e suas obras" {% if produto.genero == "40 - Borracha e suas obras" %}selected{% endif %}>40 - Borracha e suas obras</option>
+                                    <option value="41 - Peles (exceto peleteria) e couros" {% if produto.genero == "41 - Peles (exceto peleteria) e couros" %}selected{% endif %}>41 - Peles (exceto peleteria) e couros</option>
+                                    <option value="42 - Obras de couro e artigos de viagem" {% if produto.genero == "42 - Obras de couro e artigos de viagem" %}selected{% endif %}>42 - Obras de couro e artigos de viagem</option>
+                                    <option value="43 - Peleteria e suas obras" {% if produto.genero == "43 - Peleteria e suas obras" %}selected{% endif %}>43 - Peleteria e suas obras</option>
+                                    <option value="44 - Madeira, carvão vegetal e obras de madeira" {% if produto.genero == "44 - Madeira, carvão vegetal e obras de madeira" %}selected{% endif %}>44 - Madeira, carvão vegetal e obras de madeira</option>
+                                    <option value="45 - Cortiça e suas obras" {% if produto.genero == "45 - Cortiça e suas obras" %}selected{% endif %}>45 - Cortiça e suas obras</option>
+                                    <option value="46 - Obras de cestaria" {% if produto.genero == "46 - Obras de cestaria" %}selected{% endif %}>46 - Obras de cestaria</option>
+                                    <option value="47 - Pastas de madeira e aparas" {% if produto.genero == "47 - Pastas de madeira e aparas" %}selected{% endif %}>47 - Pastas de madeira e aparas</option>
+                                    <option value="48 - Papel e cartão e suas obras" {% if produto.genero == "48 - Papel e cartão e suas obras" %}selected{% endif %}>48 - Papel e cartão e suas obras</option>
+                                    <option value="49 - Livros, jornais e produtos gráficos" {% if produto.genero == "49 - Livros, jornais e produtos gráficos" %}selected{% endif %}>49 - Livros, jornais e produtos gráficos</option>
+                                    <option value="50 - Seda" {% if produto.genero == "50 - Seda" %}selected{% endif %}>50 - Seda</option>
+                                    <option value="51 - Lã e pêlos finos ou grosseiros" {% if produto.genero == "51 - Lã e pêlos finos ou grosseiros" %}selected{% endif %}>51 - Lã e pêlos finos ou grosseiros</option>
+                                    <option value="52 - Algodão" {% if produto.genero == "52 - Algodão" %}selected{% endif %}>52 - Algodão</option>
+                                    <option value="53 - Outras fibras têxteis vegetais" {% if produto.genero == "53 - Outras fibras têxteis vegetais" %}selected{% endif %}>53 - Outras fibras têxteis vegetais</option>
+                                    <option value="54 - Filamentos sintéticos ou artificiais" {% if produto.genero == "54 - Filamentos sintéticos ou artificiais" %}selected{% endif %}>54 - Filamentos sintéticos ou artificiais</option>
+                                    <option value="55 - Fibras sintéticas ou artificiais, descontínuas" {% if produto.genero == "55 - Fibras sintéticas ou artificiais, descontínuas" %}selected{% endif %}>55 - Fibras sintéticas ou artificiais, descontínuas</option>
+                                    <option value="56 - Falsos tecidos, cordas e artigos de cordoaria" {% if produto.genero == "56 - Falsos tecidos, cordas e artigos de cordoaria" %}selected{% endif %}>56 - Falsos tecidos, cordas e artigos de cordoaria</option>
+                                    <option value="57 - Tapetes e outros revestimentos de piso" {% if produto.genero == "57 - Tapetes e outros revestimentos de piso" %}selected{% endif %}>57 - Tapetes e outros revestimentos de piso</option>
+                                    <option value="58 - Tecidos especiais, bordados e tapeçarias" {% if produto.genero == "58 - Tecidos especiais, bordados e tapeçarias" %}selected{% endif %}>58 - Tecidos especiais, bordados e tapeçarias</option>
+                                    <option value="59 - Tecidos impregnados, revestidos e técnicos" {% if produto.genero == "59 - Tecidos impregnados, revestidos e técnicos" %}selected{% endif %}>59 - Tecidos impregnados, revestidos e técnicos</option>
+                                    <option value="60 - Tecidos de malha" {% if produto.genero == "60 - Tecidos de malha" %}selected{% endif %}>60 - Tecidos de malha</option>
+                                    <option value="61 - Vestuário e acessórios de malha" {% if produto.genero == "61 - Vestuário e acessórios de malha" %}selected{% endif %}>61 - Vestuário e acessórios de malha</option>
+                                    <option value="62 - Vestuário e acessórios exceto de malha" {% if produto.genero == "62 - Vestuário e acessórios exceto de malha" %}selected{% endif %}>62 - Vestuário e acessórios exceto de malha</option>
+                                    <option value="63 - Artefatos têxteis confeccionados" {% if produto.genero == "63 - Artefatos têxteis confeccionados" %}selected{% endif %}>63 - Artefatos têxteis confeccionados</option>
+                                    <option value="64 - Calçados e partes" {% if produto.genero == "64 - Calçados e partes" %}selected{% endif %}>64 - Calçados e partes</option>
+                                    <option value="65 - Chapéus e partes" {% if produto.genero == "65 - Chapéus e partes" %}selected{% endif %}>65 - Chapéus e partes</option>
+                                    <option value="66 - Guarda-chuvas, bengalas e partes" {% if produto.genero == "66 - Guarda-chuvas, bengalas e partes" %}selected{% endif %}>66 - Guarda-chuvas, bengalas e partes</option>
+                                    <option value="67 - Penas, flores artificiais e cabelos" {% if produto.genero == "67 - Penas, flores artificiais e cabelos" %}selected{% endif %}>67 - Penas, flores artificiais e cabelos</option>
+                                    <option value="68 - Obras de pedra, gesso e cimento" {% if produto.genero == "68 - Obras de pedra, gesso e cimento" %}selected{% endif %}>68 - Obras de pedra, gesso e cimento</option>
+                                    <option value="69 - Produtos cerâmicos" {% if produto.genero == "69 - Produtos cerâmicos" %}selected{% endif %}>69 - Produtos cerâmicos</option>
+                                    <option value="70 - Vidro e suas obras" {% if produto.genero == "70 - Vidro e suas obras" %}selected{% endif %}>70 - Vidro e suas obras</option>
+                                    <option value="71 - Jóias, pedras preciosas e moedas" {% if produto.genero == "71 - Jóias, pedras preciosas e moedas" %}selected{% endif %}>71 - Jóias, pedras preciosas e moedas</option>
+                                    <option value="72 - Ferro fundido, ferro e aço" {% if produto.genero == "72 - Ferro fundido, ferro e aço" %}selected{% endif %}>72 - Ferro fundido, ferro e aço</option>
+                                    <option value="73 - Obras de ferro fundido, ferro ou aço" {% if produto.genero == "73 - Obras de ferro fundido, ferro ou aço" %}selected{% endif %}>73 - Obras de ferro fundido, ferro ou aço</option>
+                                    <option value="74 - Cobre e suas obras" {% if produto.genero == "74 - Cobre e suas obras" %}selected{% endif %}>74 - Cobre e suas obras</option>
+                                    <option value="75 - Níquel e suas obras" {% if produto.genero == "75 - Níquel e suas obras" %}selected{% endif %}>75 - Níquel e suas obras</option>
+                                    <option value="76 - Alumínio e suas obras" {% if produto.genero == "76 - Alumínio e suas obras" %}selected{% endif %}>76 - Alumínio e suas obras</option>
+                                    <option value="77 - (Reservado)" {% if produto.genero == "77 - (Reservado)" %}selected{% endif %}>77 - (Reservado)</option>
+                                    <option value="78 - Chumbo e suas obras" {% if produto.genero == "78 - Chumbo e suas obras" %}selected{% endif %}>78 - Chumbo e suas obras</option>
+                                    <option value="79 - Zinco e suas obras" {% if produto.genero == "79 - Zinco e suas obras" %}selected{% endif %}>79 - Zinco e suas obras</option>
+                                    <option value="80 - Estanho e suas obras" {% if produto.genero == "80 - Estanho e suas obras" %}selected{% endif %}>80 - Estanho e suas obras</option>
+                                    <option value="81 - Outros metais comuns" {% if produto.genero == "81 - Outros metais comuns" %}selected{% endif %}>81 - Outros metais comuns</option>
+                                    <option value="82 - Ferramentas e talheres de metais comuns" {% if produto.genero == "82 - Ferramentas e talheres de metais comuns" %}selected{% endif %}>82 - Ferramentas e talheres de metais comuns</option>
+                                    <option value="83 - Obras diversas de metais comuns" {% if produto.genero == "83 - Obras diversas de metais comuns" %}selected{% endif %}>83 - Obras diversas de metais comuns</option>
+                                    <option value="84 - Máquinas e aparelhos mecânicos" {% if produto.genero == "84 - Máquinas e aparelhos mecânicos" %}selected{% endif %}>84 - Máquinas e aparelhos mecânicos</option>
+                                    <option value="85 - Máquinas, aparelhos e materiais elétricos" {% if produto.genero == "85 - Máquinas, aparelhos e materiais elétricos" %}selected{% endif %}>85 - Máquinas, aparelhos e materiais elétricos</option>
+                                    <option value="86 - Material ferroviário e sinalização" {% if produto.genero == "86 - Material ferroviário e sinalização" %}selected{% endif %}>86 - Material ferroviário e sinalização</option>
+                                    <option value="87 - Veículos automóveis, tratores e partes" {% if produto.genero == "87 - Veículos automóveis, tratores e partes" %}selected{% endif %}>87 - Veículos automóveis, tratores e partes</option>
+                                    <option value="88 - Aeronaves e aparelhos espaciais" {% if produto.genero == "88 - Aeronaves e aparelhos espaciais" %}selected{% endif %}>88 - Aeronaves e aparelhos espaciais</option>
+                                    <option value="89 - Embarcações e estruturas flutuantes" {% if produto.genero == "89 - Embarcações e estruturas flutuantes" %}selected{% endif %}>89 - Embarcações e estruturas flutuantes</option>
+                                    <option value="90 - Instrumentos de óptica, médicos e precisão" {% if produto.genero == "90 - Instrumentos de óptica, médicos e precisão" %}selected{% endif %}>90 - Instrumentos de óptica, médicos e precisão</option>
+                                    <option value="91 - Aparelhos de relojoaria" {% if produto.genero == "91 - Aparelhos de relojoaria" %}selected{% endif %}>91 - Aparelhos de relojoaria</option>
+                                    <option value="92 - Instrumentos musicais" {% if produto.genero == "92 - Instrumentos musicais" %}selected{% endif %}>92 - Instrumentos musicais</option>
+                                    <option value="93 - Armas e munições" {% if produto.genero == "93 - Armas e munições" %}selected{% endif %}>93 - Armas e munições</option>
+                                    <option value="94 - Móveis, colchões e iluminação" {% if produto.genero == "94 - Móveis, colchões e iluminação" %}selected{% endif %}>94 - Móveis, colchões e iluminação</option>
+                                    <option value="95 - Brinquedos, jogos e artigos para esporte" {% if produto.genero == "95 - Brinquedos, jogos e artigos para esporte" %}selected{% endif %}>95 - Brinquedos, jogos e artigos para esporte</option>
+                                    <option value="96 - Obras diversas" {% if produto.genero == "96 - Obras diversas" %}selected{% endif %}>96 - Obras diversas</option>
+                                    <option value="97 - Objetos de arte, coleção e antiguidades" {% if produto.genero == "97 - Objetos de arte, coleção e antiguidades" %}selected{% endif %}>97 - Objetos de arte, coleção e antiguidades</option>
+                                    <option value="98 - Reservado para usos especiais" {% if produto.genero == "98 - Reservado para usos especiais" %}selected{% endif %}>98 - Reservado para usos especiais</option>
+                                    <option value="99 - Uso na codificação de processo produtivo" {% if produto.genero == "99 - Uso na codificação de processo produtivo" %}selected{% endif %}>99 - Uso na codificação de processo produtivo</option>
+                                </select>
+                            </div>
+                        </div>
+                        </div>
+                        </div>
+                    <div class="modal-produto-sped-footer">
+                        <button type="button" class="btn modal-produto-sped-btn-cancel" data-bs-dismiss="modal">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn modal-produto-sped-btn-save">
+                            Salvar <i class="bi bi-check2 ms-1"></i>
+                        </button>
+                    </div>
+                </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% comment %} modal de exclusão {% endcomment %}
+<div class="modal fade" id="modalExcluir{{ produto.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 13px;">
+            <div class="modal-header">
+                <h5 class="modal-title text-center w-100">Confirmar Exclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                Tem certeza que deseja excluir o produto <strong>{{ produto.descricao_prod|default:"Sem descrição" }}</strong>?
+            </div>
+            <div class="modal-footer d-flex justify-content-center">
+                <form method="POST" action="{% url 'excluir_produto_sped' produto.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Excluir</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<script src="{% static 'js/listagem_prod.js' %}"></script>
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

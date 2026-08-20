@@ -1,0 +1,459 @@
+{% extends 'base.html' %}
+{% block content %}
+{% load static %}
+
+<style>
+    body {
+        background-color: #f5f6fa;
+        color: #1c1c1e;
+        font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+    }
+    .main-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 1.25rem 1rem;
+    }
+    .modern-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px 0 rgba(0,0,0,0.06);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(0,0,0,0.05);
+        overflow: hidden;
+    }
+    .modern-card:hover {
+        box-shadow: 0 8px 12px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+        transform: translateY(-1px);
+    }
+    .card-header-modern {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid rgba(0,0,0,0.08);
+        background: linear-gradient(to bottom, #fff, #f8fafc);
+    }
+    .card-header-modern h3 {
+        font-size: 1rem;
+        margin: 0;
+    }
+    .card-body-modern {
+        padding: 1.25rem;
+    }
+    .form-group-modern {
+        margin-bottom: 1rem;
+    }
+    .form-group-modern label {
+        display: block;
+        font-weight: 600;
+        color: #374151;
+        font-size: 0.8125rem;
+        margin-bottom: 0.4rem;
+        letter-spacing: 0.025em;
+    }
+    .btn-modern {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        padding: 0.6rem 1.25rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+    .btn-success-modern {
+        background: #10b981;
+        color: #fff;
+    }
+    .btn-success-modern:hover {
+        background: #059669;
+        color: #fff;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(16,185,129,0.3);
+    }
+    .btn-success-modern:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+    .btn-outline-modern {
+        background: transparent;
+        color: #2563eb;
+        border: 1.5px solid #2563eb;
+    }
+    .btn-outline-modern:hover {
+        background: #2563eb;
+        color: #fff;
+    }
+    .upload-zone {
+        border: 2px dashed #cbd5e1;
+        border-radius: 10px;
+        padding: 1.25rem;
+        text-align: center;
+        background: #f8fafc;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    .upload-zone:hover {
+        border-color: #2563eb;
+        background: #eff6ff;
+    }
+    .upload-zone.drag-over {
+        border-color: #2563eb;
+        background: #dbeafe;
+        transform: scale(1.01);
+    }
+    .upload-zone-icon {
+        font-size: 2.25rem;
+        color: #94a3b8;
+        margin-bottom: 0.6rem;
+    }
+    .upload-zone-text {
+        color: #475569;
+        font-weight: 500;
+        font-size: 0.875rem;
+        margin-bottom: 0.2rem;
+    }
+    .upload-zone-hint {
+        color: #94a3b8;
+        font-size: 0.75rem;
+    }
+    .file-info {
+        background: #ecfdf5;
+        border: 1.5px solid #10b981;
+        border-radius: 8px;
+        padding: 0.6rem 0.75rem;
+        margin-top: 0.75rem;
+        color: #047857;
+        font-weight: 600;
+        font-size: 0.875rem;
+        word-break: break-all;
+        animation: slideDown 0.3s ease;
+    }
+    .action-panel {
+        background: linear-gradient(135deg, #f8fafc 0%, #fff 100%);
+        border-radius: 12px;
+        padding: 2rem 1.5rem;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    .action-panel-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+        box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);
+    }
+    .action-panel-icon i {
+        font-size: 1.5rem;
+        color: #fff;
+    }
+    .action-panel-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 0.4rem;
+    }
+    .action-panel-description {
+        color: #64748b;
+        font-size: 0.8125rem;
+        margin-bottom: 1rem;
+    }
+    .alert-modern {
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        margin-top: 0.75rem;
+        border-left: 3px solid;
+        animation: slideIn 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-size: 0.875rem;
+    }
+    .alert-danger-modern {
+        background: #fef2f2;
+        border-left-color: #ef4444;
+        color: #991b1b;
+    }
+    .alert-warning-modern {
+        background: #fffbeb;
+        border-left-color: #f59e0b;
+        color: #92400e;
+    }
+    .alert-link-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        margin-top: 0.4rem;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: #b91c1c;
+        text-decoration: underline;
+    }
+    .success-panel {
+        text-align: center;
+        padding: 1rem 0.5rem 0.25rem;
+        animation: slideDown 0.35s ease;
+    }
+    /* Quando o painel de sucesso está visível, o formulário de upload some */
+    .success-panel ~ #formArquivos {
+        display: none;
+    }
+    .success-panel-icon {
+        width: 60px;
+        height: 60px;
+        margin: 0 auto 1rem;
+        border-radius: 50%;
+        background: #dcfce7;
+        color: #16a34a;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.75rem;
+    }
+    .success-panel-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #14532d;
+        margin-bottom: 0.3rem;
+    }
+    .success-panel-subtitle {
+        color: #64748b;
+        font-size: 0.875rem;
+        margin-bottom: 1.25rem;
+    }
+    .success-steps {
+        text-align: left;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+    }
+    .success-step {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        background: #f8fafc;
+        border: 1px solid rgba(0,0,0,0.05);
+        border-radius: 10px;
+        padding: 0.85rem 1rem;
+    }
+    .success-step-badge {
+        flex-shrink: 0;
+        width: 26px;
+        height: 26px;
+        border-radius: 8px;
+        background: #2563eb;
+        color: #fff;
+        font-size: 0.8125rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .success-step-text {
+        font-size: 0.875rem;
+        color: #334155;
+        line-height: 1.5;
+    }
+    .success-step-text a {
+        font-weight: 600;
+        color: #2563eb;
+        text-decoration: none;
+    }
+    .success-step-text a:hover {
+        text-decoration: underline;
+    }
+    .success-step-text .tag-btn {
+        display: inline-block;
+        padding: 0.05em 0.5em;
+        background: #dcfce7;
+        color: #15803d;
+        border-radius: 5px;
+        font-size: 0.8125rem;
+        font-weight: 600;
+    }
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    .icon_btn {
+        font-weight: 600;
+        font-size: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(16,185,129,0.06);
+        background: linear-gradient(90deg, #16c79a 0%, #4bc0c8 100%);
+        color: #fff;
+        transition: all 0.2s ease;
+    }
+    .icon_btn:hover {
+        background: linear-gradient(90deg, #16c79a 0%, #4bc0c8 100%);
+        color: #fff;
+        transform: translateY(5px) scale(1.03);
+        box-shadow: 0 4px 6px -1px rgba(16,185,129,0.3);
+    }
+    .button-row-center {
+        display: flex;
+        gap: 0.7rem;
+        justify-content: center !important;
+        margin-top: 1.1rem;
+        margin-bottom: 0.2rem;
+    }
+</style>
+
+<script src="{% static 'js/upload_movimentacoes.js' %}?v=3"></script>
+
+<div class="main-container">
+    <div class="mb-4">
+        <div class="row g-3">
+            <div class="col-lg-7">
+                <div class="modern-card">
+                    <div class="card-header-modern">
+                        <h3 class="mb-0 fw-bold text-center" style="color: #0f172a;">Upload - SPED e XMLs (NF-e / CT-e)</h3>
+                    </div>
+                    <div class="card-body-modern">
+
+                        {% for grupo in grupos_mensagens %}
+                        {% if grupo.grouper == 'success' %}
+                        <div class="success-panel">
+                            <div class="success-panel-icon"><i class="bi bi-check-circle-fill"></i></div>
+                            <h3 class="success-panel-title">Arquivos processados com sucesso!</h3>
+                            <p class="success-panel-subtitle">{{ grupo.list.0 }}</p>
+                            <p class="success-panel-subtitle">Siga os passos abaixo para acompanhar as movimentações:</p>
+
+                            <div class="success-steps">
+                                <div class="success-step">
+                                    <span class="success-step-badge">1</span>
+                                    <div class="success-step-text">
+                                        Para ver a movimentação das <strong>NF-es</strong>, acesse
+                                        <a href="{% url 'mercadorias_em_andamento' %}">NF-es em andamento</a>
+                                        e clique no botão <span class="tag-btn"><i class="bi bi-arrow-right-circle"></i> Continuar</span>.
+                                    </div>
+                                </div>
+                                <div class="success-step">
+                                    <span class="success-step-badge">2</span>
+                                    <div class="success-step-text">
+                                        Para ver a movimentação dos <strong>CT-es</strong>, acesse
+                                        <a href="{% url 'ctes_em_andamento' %}">CT-es em andamento</a>
+                                        e clique no botão <span class="tag-btn"><i class="bi bi-arrow-right-circle"></i> Continuar</span>.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="button-row-center">
+                                <a href="{% url 'mercadorias_em_andamento' %}" class="btn-modern btn-success-modern">
+                                    <i class="bi bi-arrow-right"></i> NF-es em andamento
+                                </a>
+                                <a href="{% url 'ctes_em_andamento' %}" class="btn-modern btn-success-modern">
+                                    <i class="bi bi-arrow-right"></i> CT-es em andamento
+                                </a>
+                            </div>
+                            <div class="button-row-center" style="margin-top: 0.5rem;">
+                                <a href="{% url 'sped_xml' %}" class="btn-modern btn-outline-modern">
+                                    <i class="bi bi-arrow-repeat"></i> Enviar novos arquivos
+                                </a>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+
+                        <form method="POST" enctype="multipart/form-data" action="{% url 'sped_xml' %}" id="formArquivos">
+                            {% csrf_token %}
+                            <div class="form-group-modern">
+                                <label>Arquivo SPED (Upload)</label>
+                                <div class="upload-zone" id="spedZone" role="button" tabindex="0" aria-label="Selecionar arquivo SPED">
+                                    <div class="upload-zone-icon"><i class="bi bi-filetype-txt"></i></div>
+                                    <div class="upload-zone-text">Clique ou arraste o arquivo aqui</div>
+                                    <div class="upload-zone-hint">Formatos aceitos: .txt</div>
+                                    <input type="file" id="sped_files" name="sped_files" accept=".txt" hidden>
+                                </div>
+                                <div id="spedInfo" class="file-info d-none"></div>
+                            </div>
+
+                            <div class="form-group-modern d-none" id="xmlCard">
+                                <label>Pasta de XMLs</label>
+                                <div class="upload-zone" id="xmlZone" role="button" tabindex="0" aria-label="Selecionar pasta com XMLs">
+                                    <div class="upload-zone-icon"><i class="bi bi-folder2-open"></i></div>
+                                    <div class="upload-zone-text">Clique ou arraste a pasta aqui</div>
+                                    <div class="upload-zone-hint">Pasta com os arquivos .xml das notas</div>
+                                    <input type="file" id="folder_input" name="folder_input" webkitdirectory directory multiple hidden>
+                                </div>
+                                <div id="folderInfo" class="file-info d-none"></div>
+                            </div>
+
+                            <div class="button-row-center d-none" id="processBtnRow">
+                                <button type="submit" name="btn" value="processar" id="processBtn" class="btn-modern btn-success-modern">
+                                    <span class="spinner-border spinner-border-sm me-2 d-none" id="spinnerNFe"></span>
+                                    <span id="btnTextNFe">Processar</span>
+                                </button>
+                            </div>
+                        </form>
+
+                        {% if messages %}
+                            <div class="messages-container" style="margin: 1rem 0 0.5rem 0;">
+                                {% for message in messages %}
+                                    {% if 'error' in message.tags %}
+                                    <div class="alert-modern alert-danger-modern d-flex align-items-center" style="gap: 0.9rem; background-color: #fef2f2; color:#991b1b; border-left: 5px solid #ef4444; border-radius: 6px; padding: .8rem 1.2rem; margin-bottom: .6rem; box-shadow: 0 3px 18px 0 rgba(239,68,68,0.12);">
+                                        <i class="bi bi-x-circle-fill" style="font-size: 1.5rem;"></i>
+                                        <div style="flex-grow:1; font-weight: 500;">
+                                            {{ message }}
+                                            {% if "empresa não cadastrada" in message|lower %}
+                                            <br>
+                                            <a href="{% url 'lista_empresas' %}" class="alert-link-action">
+                                                Cadastrar empresa <i class="bi bi-arrow-right"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% elif 'warning' in message.tags %}
+                                    <div class="alert-modern alert-warning-modern d-flex align-items-center" style="gap: 0.9rem; background-color: #fff2dc; color:#b98c0a; border-left: 5px solid #f7c873; border-radius: 6px; padding: .8rem 1.2rem; margin-bottom: .6rem; box-shadow: 0 3px 18px 0 rgba(182,152,19,.13);">
+                                        <i class="bi bi-exclamation-triangle-fill" style="font-size: 1.5rem;"></i>
+                                        <div style="flex-grow:1; font-weight: 500;">{{ message }}</div>
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="action-panel">
+                    <div class="action-panel-icon"><i class="bi bi-hourglass-split"></i></div>
+                    <h3 class="action-panel-title">Ver movimentações em andamento</h3>
+                    <p class="action-panel-description">Acompanhe as movimentações já processadas</p>
+                    <a href="{% url 'mercadorias_em_andamento' %}" class="d-inline-flex align-items-center gap-2 px-4 py-2 icon_btn" style="margin-bottom: 1rem; text-decoration: none"><i class="bi bi-arrow-right" style="font-size: 1.15rem;"> NF-es</i></a>
+                    <a href="{% url 'outros_modelos_em_andamento' %}" class="d-inline-flex align-items-center gap-2 px-4 py-2 icon_btn" style="text-decoration: none"><i class="bi bi-arrow-right" style="font-size: 1.15rem;"> CT-es</i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+{% load static %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/view_data.css' %}?v=9.1">
+<style>
+    /* Destaque visual para campos alterados */
+    .input-cells-changed {
+        background: linear-gradient(90deg, #e9ffec 0%, #d6fae2 100%) !important;
+        border: 1.8px solid #48b97b !important;
+        box-shadow: 0 2px 4px 0 #48b97b15;
+        color: #1e703d;
+        -webkit-text-fill-color: #1e703d;
+    }
+    .input-cells-changed[readonly], .input-cells-changed[disabled] {
+        opacity: 1;
+    }
+</style>
+</head>
+<body>
+
+{% if messages %}
+  <div class="vd-messages" style="position: fixed; top: 30px; right: 30px; z-index: 1050; min-width: 320px;">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show vd-toast-message py-2 mb-2"
+      role="alert" 
+      style="font-size:0.87rem;box-shadow:0 2px 8px rgba(0,0,0,0.12);">
+      {% if message.tags == 'error' %}<i class="bi bi-x-circle me-2"></i>
+      {% elif message.tags == 'success' %}<i class="bi bi-check-circle me-2"></i>
+      {% elif message.tags == 'warning' %}<i class="bi bi-exclamation-triangle me-2"></i>
+      {% else %}<i class="bi bi-info-circle me-2"></i>{% endif %}
+      {{ message }}
+    </div>
+    {% endfor %}
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      setTimeout(function() {
+        document.querySelectorAll('.vd-toast-message').forEach(function(el) {
+          let bsAlert = bootstrap.Alert.getOrCreateInstance(el);
+          bsAlert.close();
+        });
+      }, 5000);
+    });
+  </script>
+{% endif %}
+<div id="data-holder"
+     data-empresa-id="{{ empresa_id }}"
+     datas-sped="{{ mes_sped }}"
+     data-url-salvar="{% url 'view_dados_nfe' %}"
+     data-url-exportar="{% url 'view_dados_nfe' %}"
+     data-current-query="{{ current_query }}"
+     data-somente-visualizacao="{% if somente_visualizacao %}true{% else %}false{% endif %}">
+</div>
+
+<div class="vd-view-page">
+  <!-- Header -->
+  <header class="vd-view-header">
+    <div class="vd-view-header-left">
+      <a href="{% url 'mercadorias_em_andamento' %}" class="vd-view-back" aria-label="Voltar">
+        <i class="bi bi-arrow-left"></i>
+      </a>
+      <div>
+        <h1 class="vd-view-title">{{texto}}</h1>
+        <p class="vd-view-subtitle" style='font-style: italic;'>
+          Gerencie e visualize todas as movimentações importadas do SPED
+          {% if mes_sped %} · <strong>Período de: {{mes_sped}}</strong>{% endif %}
+        </p>
+      </div>
+    </div>
+    <div class="vd-view-actions">
+      <button type="button" class="vd-btn" href="{% url 'view_dados_nfe' %}">
+        <i class="bi bi-arrow-clockwise"></i> Atualizar dados
+      </button>
+      <button type="button" class="vd-btn" onclick="exportarRelatorio()">
+        <i class="bi bi-download"></i> Exportar relatório
+      </button>
+      {% if not somente_visualizacao %}
+      <button type="button" class="vd-btn vd-btn-primary" onclick="salvarAlteracoes()">
+        <i class="bi bi-floppy"></i> Salvar alterações
+      </button>
+      {% endif %}
+    </div>
+  </header>
+
+  <!-- Métricas -->
+  <div class="vd-metrics">
+    <div class="vd-metric-card">
+      <div class="vd-metric-icon blue"><i class="bi bi-list-ul"></i></div>
+      <div>
+        <p class="vd-metric-value">{{ total_registros }}</p>
+        <p class="vd-metric-label">Total de registros</p>
+      </div>
+    </div>
+    <div class="vd-metric-card">
+      <div class="vd-metric-icon green"><i class="bi bi-currency-dollar"></i></div>
+      <div>
+        <p class="vd-metric-value">R$ {{ total_valor_total_geral|stringformat:".2f" }}</p>
+        <p class="vd-metric-label">Valor total</p>
+      </div>
+    </div>
+    <div class="vd-metric-card">
+      <div class="vd-metric-icon purple"><i class="bi bi-receipt"></i></div>
+      <div>
+        <p class="vd-metric-value">R$ {{ total_valor_icms_geral|stringformat:".2f" }}</p>
+        <p class="vd-metric-label">Valor ICMS</p>
+      </div>
+    </div>
+    <div class="vd-metric-card">
+      <div class="vd-metric-icon orange"><i class="bi bi-percent"></i></div>
+      <div>
+        <p class="vd-metric-value">R$ {{ total_valor_ipi_geral|stringformat:".2f" }}</p>
+        <p class="vd-metric-label">Valor IPI</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="vd-toolbar">
+    <div class="vd-search-wrap">
+      <i class="bi bi-search"></i>
+      <input type="search"
+             id="vd-global-search"
+             class="vd-search-input"
+             placeholder="Buscar em todas as colunas..."
+             value="{{ busca|default:'' }}">
+    </div>
+    <div class="vd-toolbar-right">
+      <span class="vd-selection-info" id="vd-selection-count">0 selecionado(s)</span>
+      <button type="button" class="vd-btn" id="vd-btn-select-all">
+        <i class="bi bi-check2-square"></i> Selecionar todos
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabela -->
+  <div class="vd-table-card">
+    <div class="vd-table-scroll">
+      {% if total_registros %}
+      <table class="vd-data-table">
+        <thead>
+          <tr>
+            <th class='text-center'>Tipo</th>
+            <th class='text-center'>CNPJ/CPF</th>
+            <th class='text-center'>NF-e</th>
+            <th class='text-center'>Chave</th>
+            <th class='text-center'>Emit/Dest</th>
+            <th class='text-center'>UF</th>
+            <th class='text-center'>Código</th>
+            <th class='text-center'>Descrição</th>
+            <th class='text-center'>CFOP</th>
+            <th class='text-center'>NCM</th>
+            <th class='text-center'>Quantidade</th>
+            <th class='text-center'>Valor Uni</th>
+            <th class='text-center'>Base ICMS</th>
+            <th class='text-center'>Aliq ICMS</th>
+            <th class='text-center'>Valor ICMS</th>
+            <th class='text-center'>Valor Total</th>
+            <th class='text-center'>CST</th>
+            <th class='text-center'>CEST</th>
+            <th class='text-center'>Valor IPI</th>
+            <th class='text-center'>Operação</th>
+            <th class='text-center'>Documento</th>
+          </tr>
+          <tr class="filter-row">
+            <th><input type="text" name="tipo" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.tipo }}"></th>
+            <th><input type="text" name="cnpj_cpf" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.cnpj_cpf }}"></th>
+            <th><input type="text" name="numero_nota" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.numero_nota }}"></th>
+            <th><input type="text" name="chave_nota" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.chave_nota }}"></th>
+            <th><input type="text" name="nome" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.nome }}"></th>
+            <th><input type="text" name="codigo_uf" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.codigo_uf }}"></th>
+            <th><input type="text" name="codigo_prod" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.codigo_prod }}"></th>
+            <th><input type="text" name="descricao_prod" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.descricao_prod }}"></th>
+            <th><input type="text" name="cfop_prod" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.cfop_prod }}"></th>
+            <th><input type="text" name="ncm" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.ncm }}"></th>
+            <th><input type="text" name="quantidade_prod" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.quantidade_prod }}"></th>
+            <th><input type="text" name="valor_unitario" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.valor_unitario }}"></th>
+            <th><input type="text" name="base_icms" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.base_icms|default:'' }}"></th>
+            <th><input type="text" name="aliquota_icms" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.aliquota_icms }}"></th>
+            <th><input type="text" name="valor_icms" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.valor_icms }}"></th>
+            <th><input type="text" name="valor_total" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.valor_total }}"></th>
+            <th><input type="text" name="cst" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.cst }}"></th>
+            <th><input type="text" name="cest" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.cest }}"></th>
+            <th><input type="text" name="valor_ipi" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.valor_ipi }}"></th>
+            <th><input type="text" name="tipo_operacao" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.tipo_operacao }}"></th>
+            <th><input type="text" name="numero_documento" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.numero_documento }}"></th>
+          </tr>
+        </thead>
+        {% for item in dados_sped %}
+        <tbody>
+            <tr data-cod-part="{{ item.cod_part }}"
+                data-numero-nota-old="{{ item.numero_nota }}"
+                data-codigo-prod-old="{{ item.codigo_prod }}"
+                data-chave-nota-old="{{ item.chave_nota }}"
+                data-data-inicio-sped="{{ data_sped }}">
+                <td>
+                    {% if somente_visualizacao %}
+                        <span class="vd-tipo-badge {% if item.tipo_nota|lower == 'entrada' %}entrada{% else %}saida{% endif %}">
+                            {{ item.tipo_nota|default:"-" }}
+                        </span>
+                    {% else %}
+                        <input type="text" value="{{ item.tipo_nota|default_if_none:'' }}" class="input_cells input-cells-locked" readonly disabled title="Campo não editável">
+                    {% endif %}
+                </td>
+                <td>
+                    <input type="text" value="{{ item.cnpj_cpf|default_if_none:'' }}" class="input_cells input-cells-locked text-center" readonly disabled title="Campo não editável">
+                </td>
+                <td>
+                    <input type="text" value="{{ item.numero_nota|default_if_none:'' }}" class="input_cells input-cells-locked text-center" readonly disabled title="Campo não editável">
+                </td>
+                <td>
+                    <input type="text" value="{{ item.chave_nota|default_if_none:'' }}" class="input_cells input-cells-locked text-center" readonly disabled title="Campo não editável">
+                </td>
+                <td>
+                    <input type="text" value="{{ item.nome|default_if_none:'' }}" class="input_cells input-cells-locked text-center" readonly disabled title="Campo não editável">
+                </td>
+                <td>
+                    <input type="text" value="{{ item.codigo_uf|default_if_none:'' }}" class="input_cells input-cells-locked text-center" readonly disabled title="Campo não editável">
+                </td>
+                <td>
+                    <input type="text" value="{{ item.codigo_prod|default_if_none:'' }}" class="input_cells input-cells-locked text-center" readonly disabled title="Campo não editável">
+                </td>
+                <td>
+                    <input type="text" value="{{ item.descricao_prod|default_if_none:'' }}" class="input_cells input-cells-locked text-center" readonly disabled title="Campo não editável">
+                </td>
+                <td>
+                    <input type="text" value="{{ item.cfop_prod|default_if_none:'' }}" class="input_cells text-center {% if item.cfop_prod_changed %}input-cells-changed{% endif %}" {% if somente_visualizacao %}readonly{% endif %}>
+                </td>
+                <td>
+                    <input type="text" value="{{ item.ncm|default_if_none:'' }}" class="input_cells text-center {% if item.ncm_changed %}input-cells-changed{% endif %}" {% if somente_visualizacao %}readonly{% endif %}>
+                </td>
+                <td>
+                    <input type="text" inputmode="decimal" value="{% if item.quantidade_prod is not None %}{{ item.quantidade_prod|stringformat:'.2f' }}{% endif %}" class="input_cells input-num text-center {% if item.quantidade_prod_changed %}input-cells-changed{% endif %}" {% if somente_visualizacao %}readonly{% endif %}>
+                </td>
+                <td>
+                    <input type="text" inputmode="decimal" value="{% if item.valor_unitario is not None %}{{ item.valor_unitario|stringformat:'.2f' }}{% endif %}" class="input_cells input-num text-center {% if item.valor_unitario_changed %}input-cells-changed{% endif %}" {% if somente_visualizacao %}readonly{% endif %}>
+                </td>
+                <td>
+                    <input type="text" inputmode="decimal" value="{% if item.base_icms is not None %}{{ item.base_icms|stringformat:'.2f' }}{% endif %}" class="input_cells input-num text-center {% if item.base_icms_changed %}input-cells-changed{% endif %}" {% if somente_visualizacao %}readonly{% endif %}>
+                </td>
+                <td>
+                    <input type="text" inputmode="decimal" value="{% if item.aliquota_icms is not None %}{{ item.aliquota_icms|stringformat:'.2f' }}{% endif %}" class="input_cells input-num text-center {% if item.aliquota_icms_changed %}input-cells-changed{% endif %}" {% if somente_visualizacao %}readonly{% endif %}>
+                </td>
+                <td>
+                    <input type="text" inputmode="decimal" value="{% if item.valor_icms is not None %}{{ item.valor_icms|stringformat:'.2f' }}{% endif %}" class="input_cells input-num text-center {% if item.valor_icms_changed %}input-cells-changed{% endif %}" {% if somente_visualizacao %}readonly{% endif %}>
+                </td>
+                <td>
+                    <input type="text" inputmode="decimal" value="{% if item.valor_total is not None %}{{ item.valor_total|stringformat:'.2f' }}{% endif %}" class="input_cells input-num text-center {% if item.valor_total_changed %}input-cells-changed{% endif %}" {% if somente_visualizacao %}readonly{% endif %}>
+                </td>
+                <td>
+                    <input type="text" value="{{ item.cst|default_if_none:'' }}" class="input_cells text-center {% if item.cst_changed %}input-cells-changed{% endif %}" {% if somente_visualizacao %}readonly{% endif %}>
+                </td>
+                <td>
+                    <input type="text" value="{{ item.cest|default_if_none:'' }}" class="input_cells text-center {% if item.cest_changed %}input-cells-changed{% endif %}" {% if somente_visualizacao %}readonly{% endif %}>
+                </td>
+                <td>
+                    <input type="text" inputmode="decimal" value="{% if item.valor_ipi is not None %}{{ item.valor_ipi|stringformat:'.2f' }}{% endif %}" class="input_cells input-num text-center {% if item.valor_ipi_changed %}input-cells-changed{% endif %}" {% if somente_visualizacao %}readonly{% endif %}>
+                </td>
+                <td>
+                    <input type="text" value="{{ item.tipo_operacao|default_if_none:'' }}" class="input_cells text-center {% if item.tipo_operacao_changed %}input-cells-changed{% endif %}" {% if somente_visualizacao %}readonly{% endif %}>
+                </td>
+                <td>
+                    <input type="text" value="{{ item.numero_documento|default_if_none:'' }}" class="input_cells text-center {% if item.numero_documento_changed %}input-cells-changed{% endif %}">
+                </td>
+            </tr>
+        </tbody>
+        {% endfor %}
+      </table>
+      {% else %}
+      <div class="vd-empty-state">
+        <i class="bi bi-inbox"></i>
+        Nenhum registro encontrado para este período.
+      </div>
+      {% endif %}
+    </div>
+
+    {% if total_registros %}
+    <div class="vd-table-footer">
+      <span>
+        Exibindo {{ dados_sped.start_index }} a {{ dados_sped.end_index }} de {{ dados_sped.paginator.count }} registros
+      </span>
+      <div class="vd-pagination-wrap">
+        <div class="vd-page-size">
+          <form method="get" id="vd-page-size-form" class="vd-page-size-form">
+            {% for key, value in request.GET.items %}
+              {% if key != 'per_page' and key != 'page' %}
+              <input type="hidden" name="{{ key }}" value="{{ value }}">
+              {% endif %}
+            {% endfor %}
+            <label for="vd-page-size">Linhas por página:</label>
+            <select name="per_page" id="vd-page-size" onchange="this.form.submit()">
+              <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+              <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+              <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+              <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+            </select>
+          </form>
+
+        </div>
+        <div class="vd-page-btns">
+          {% if prev_page_url %}
+          <a class="vd-page-btn" href="{{ prev_page_url }}"><i class="bi bi-chevron-left"></i></a>
+          {% else %}
+          <span class="vd-page-btn disabled"><i class="bi bi-chevron-left"></i></span>
+          {% endif %}
+
+          {% for page in page_urls %}
+            {% if page.is_current %}
+            <span class="vd-page-btn active">{{ page.number }}</span>
+            {% elif page.number == 1 or page.number == dados_sped.paginator.num_pages or page.number >= dados_sped.number|add:"-2" and page.number <= dados_sped.number|add:"2" %}
+            <a class="vd-page-btn" href="{{ page.url }}">{{ page.number }}</a>
+            {% elif page.number == dados_sped.number|add:"-3" or page.number == dados_sped.number|add:"3" %}
+            <span class="vd-page-btn disabled">…</span>
+            {% endif %}
+          {% endfor %}
+
+          {% if next_page_url %}
+          <a class="vd-page-btn" href="{{ next_page_url }}"><i class="bi bi-chevron-right"></i></a>
+          {% else %}
+          <span class="vd-page-btn disabled"><i class="bi bi-chevron-right"></i></span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+
+<script>
+    const modal = document.getElementById('modalExcluir')
+
+    modal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget
+        const numeroNota = button.getAttribute('data-nota')
+        const codProduto = button.getAttribute('data-produto')
+    
+        document.getElementById('numeroNota').textContent = numeroNota
+        document.getElementById('codProduto').textContent = codProduto
+    })
+    modal
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{% static 'js/view_data_nfe.js' %}?v=9.4"></script>
+<script>
+/**
+ * Este script visa dar destaque visual para inputs que estão alterados,
+ * mas cujo conteúdo não pode ser editado. 
+ * Ele adiciona a classe '.input-cells-changed' aos inputs alterados.
+ * 
+ * Para isso, o backend deve enviar flags como item.<campo>_changed = True (por linha/coluna).
+ * Veja exemplo abaixo de uso no template já aplicado.
+ * 
+ * Caso o JS precise reforçar em casos de atualização dinâmica:
+ */
+// Exemplo para uso posterior, se precisar marcar por JS:
+// document.querySelectorAll('input[data-changed="true"]').forEach(el => el.classList.add('input-cells-changed'));
+</script>
+</body>
+</html>

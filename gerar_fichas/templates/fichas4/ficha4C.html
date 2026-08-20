@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ficha 1A</title>
+
+{% load static %}
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+<style>
+    body {
+        background-color: #f5f6fa;
+        color: #1c1c1e;
+        font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+    }
+
+    .analysis-header {
+        background: transparent;
+        color: #000;
+        padding: 0.85rem 1.1rem;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .analysis-header h4 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #000;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .voltar-btn {
+        color: #000;
+        font-size: 1.5rem;
+        text-decoration: none;
+        transition: transform 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        font-weight: bold;
+    }
+
+    .voltar-btn:hover {
+        color: #000;
+        transform: translateX(-4px);
+    }
+
+    .btn-save {
+        background: #000;
+        border: 1px solid #000;
+        color: #fff;
+        padding: 0.5rem 1.2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .btn-save:hover {
+        background: #333;
+        border-color: #333;
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .table-container {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+    }
+
+    .table-wrapper {
+        max-height: 500px;
+        overflow-y: auto;
+        overflow-x: auto;
+    }
+
+    .table-wrapper::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    .table-wrapper::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    .table-wrapper::-webkit-scrollbar-thumb {
+        background: #000;
+        border-radius: 4px;
+    }
+
+    .table-wrapper::-webkit-scrollbar-thumb:hover {
+        background: #333;
+    }
+
+    .table {
+        margin-bottom: 0;
+        font-size: 0.9rem;
+        table-layout: auto;
+        width: 100%;
+    }
+
+    .table td, .table th {
+        min-width: 100px;
+    }
+
+    .table thead {
+        background: #f8f9fa;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .table thead th {
+        border: 1px solid #dee2e6;
+        padding: 0.5rem;
+        font-weight: 600;
+        color: #000;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        letter-spacing: 0.3px;
+        vertical-align: top;
+        background: #f8f9fa;
+        min-width: 100px;
+        overflow: visible;
+        white-space: normal;
+        box-sizing: border-box;
+    }
+
+    .table thead th .header-title {
+        display: block;
+        margin-bottom: 0.4rem;
+        white-space: nowrap;
+        overflow: visible;
+        word-wrap: normal;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .table tbody tr {
+        transition: background-color 0.2s ease;
+        height: 45px;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    .table tbody td {
+        padding: 0.5rem;
+        vertical-align: middle;
+        border: 1px solid #dee2e6;
+        height: 45px;
+    }
+
+    .filter-input {
+        width: 100%;
+        padding: 0.3rem 0.5rem;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        margin-top: 0.4rem;
+        transition: all 0.2s ease;
+        background: #fff;
+        display: block;
+        box-sizing: border-box;
+    }
+
+    .filter-input:focus {
+        outline: none;
+        border-color: #000;
+        box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .input_cells {
+        width: 100%;
+        padding: 0.35rem 0.4rem;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        transition: all 0.2s ease;
+        background: #fff;
+        text-align: center;
+        height: 32px;
+        box-sizing: border-box;
+    }
+
+    .input_cells:focus {
+        outline: none;
+        border-color: #000;
+        box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+        background: #f8f9fa;
+    }
+
+    .pagination-wrapper {
+        background: #fff;
+        padding: 0.75rem;
+        border-top: 1px solid #dee2e6;
+    }
+
+    .page-link {
+        color: #000;
+        border: 1px solid #dee2e6;
+        padding: 0.4rem 0.8rem;
+        border-radius: 6px;
+        margin: 0 0.2rem;
+        transition: all 0.2s ease;
+        font-weight: 500;
+        font-size: 0.85rem;
+    }
+
+    .page-link:hover {
+        background: #000;
+        color: #fff;
+        border-color: #000;
+    }
+
+    .page-item.active .page-link {
+        background: #000;
+        color: #fff;
+        border-color: #000;
+    }
+
+    .stats-card {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 0.75rem;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+
+    .stats-card .stat-value {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #000;
+        margin: 0;
+    }
+
+    .stats-card .stat-label {
+        font-size: 0.7rem;
+        color: #6c757d;
+        margin: 0.2rem 0 0 0;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .nav-tabs {
+        border-bottom: 2px solid #dee2e6;
+        background: #fff;
+    }
+
+    .nav-tabs .nav-link {
+        color: #6c757d;
+        border: none;
+        border-bottom: 3px solid transparent;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+
+    .nav-tabs .nav-link:hover {
+        border-bottom-color: #000;
+        color: #000;
+    }
+
+    .nav-tabs .nav-link.active {
+        color: #000;
+        border-bottom-color: #000;
+        background: transparent;
+    }
+
+    .tab-content {
+        padding: 0;
+    }
+
+    .totais-table {
+        width: 100%;
+    }
+
+    .totais-table thead th {
+        background: #000;
+        color: #fff;
+        font-weight: 600;
+        padding: 0.75rem;
+        text-align: center;
+    }
+
+    .totais-table tbody td {
+        padding: 0.75rem;
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    .totais-table tbody tr {
+        height: 50px;
+    }
+
+    .totais-table tbody tr:last-child {
+        background: #f8f9fa;
+        font-weight: 700;
+        height: 55px;
+    }
+
+    /* Redimensionamento de colunas */
+    .table thead th {
+        position: relative;
+    }
+
+    .column-resizer {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 5px;
+        height: 100%;
+        cursor: col-resize;
+        background: transparent;
+        z-index: 20;
+        user-select: none;
+    }
+
+    .column-resizer:hover {
+        background: #000;
+        opacity: 0.3;
+    }
+
+    .column-resizer:active {
+        background: #000;
+        opacity: 0.6;
+    }
+
+    /* Estilos para formato SPED K230/K235 */
+    .k230-row {
+        background-color: #e8f4f8 !important;
+        font-weight: 600;
+        border-left: 4px solid #007bff;
+    }
+
+    .k230-row:hover {
+        background-color: #d1ecf1 !important;
+    }
+
+    .k235-row {
+        background-color: #f8f9fa !important;
+        border-left: 4px solid #6c757d;
+    }
+
+    .k235-row:hover {
+        background-color: #e9ecef !important;
+    }
+
+    .k230-row td,
+    .k235-row td {
+        vertical-align: middle;
+    }
+
+    /* Estilos para seções de colunas */
+    .section-header-row {
+        background: #2c3e50;
+        color: white;
+        font-weight: 700;
+        text-align: center;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+    }
+
+    .section-header-row th {
+        background: #2c3e50;
+        color: white;
+        border: 1px solid #34495e;
+        padding: 0.6rem 0.5rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+    /* Aplicar cores nas células das colunas */
+    .col-dados-gerais {
+        background-color: rgba(0, 123, 255, 0.05);
+    }
+
+    .col-entrada {
+        background-color: rgba(40, 167, 69, 0.05);
+    }
+
+    .col-saida {
+        background-color: rgba(253, 126, 20, 0.05);
+    }
+
+    .col-saldo {
+        background-color: rgba(255, 193, 7, 0.05);
+    }
+</style>
+
+<div class="container my-3" style="max-width: 1400px;">
+    <div class="table-container">
+        <!-- Header -->
+        <div class="analysis-header">
+            <h4>
+                <a href="{% url 'menu_fichas' %}" class="voltar-btn">
+                    <i class="bi bi-arrow-left-circle-fill"></i>
+                </a>
+                <span>Ficha 4C</span>
+            </h4>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <button type="button" onclick="salvarAlteracoes()" class="btn-save">
+                    <i class="bi bi-save"></i> Salvar Alterações
+                </button>
+                <button type="button" onclick="exportarFicha()" class="btn-save">
+                    <i class="bi bi-file-earmark-excel"></i> Exportar Ficha
+                </button>
+            </div>
+        </div>
+        
+        <!-- Tabs -->
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="dados-tab" data-bs-toggle="tab" data-bs-target="#dados" type="button" role="tab">
+                  <i class="bi bi-kanban"></i>
+                  <span>Rateio dos gastos gerais de fabricação</span>
+                </button>
+            </li>
+        </ul>
+
+                <div class="table-wrapper">
+                    <table class="table table-hover align-middle table-bordered text-center">
+                        <thead>
+                            
+                            <tr>
+                                <th>
+                                    <span class="header-title">Código do item</span>
+                                    <input type="text" name="f1" class="filter-input" data-col="1" placeholder="Filtrar" value="{{ filters.bloco|default:'' }}">
+                                </th>
+                                <th>
+                                    <span class="header-title">Percentual de rateio</span>
+                                    <input type="text" name="f2" class="filter-input" data-col="2" placeholder="Filtrar" value="{{ filters.data_inicial_op|default:'' }}">
+                                </th>
+                                <th>
+                                    <span class="header-title">Custo do gastos gerais de fabricação</span>
+                                    <input type="text" name="f3" class="filter-input" data-col="3" placeholder="Filtrar" value="{{ filters.data_final_op|default:'' }}">
+                                </th>
+                                <th>
+                                    <span class="header-title">ICMS do gastos gerais de fabricação</span>
+                                    <input type="text" name="f4" class="filter-input" data-col="4" placeholder="Filtrar" value="{{ filters.cod_ordem_prod|default:'' }}">
+                                </th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if dados_query and dados_query|length > 0 and dados_query.paginator.num_pages > 1 %}
+                <div class="pagination-wrapper">    
+                    <nav aria-label="Paginação">
+                        <ul class="pagination justify-content-center mb-0">
+                            {% if dados_query.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ dados_query.previous_page_number }}{% if current_query %}&{{ current_query }}{% endif %}">
+                                    <i class="bi bi-chevron-left"></i> Anterior
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="bi bi-chevron-left"></i> Anterior</span>
+                            </li>
+                            {% endif %}
+                            
+                            <li class="page-item disabled">
+                                <span class="page-link">
+                                    Página <strong>{{ dados_query.number }}</strong> de <strong>{{ dados_query.paginator.num_pages }}</strong>
+                                </span>
+                            </li>
+                            
+                            {% if dados_query.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ dados_query.next_page_number }}{% if current_query %}&{{ current_query }}{% endif %}">
+                                    Próxima <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Próxima <i class="bi bi-chevron-right"></i></span>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="data-holder"
+     data-empresa-id="{{ empresa_id|default:'' }}"
+     data-url-salvar="{% url 'salvar_edicoes' %}"
+     data-url-exportar="{% url 'exportar_relatorio' %}">
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{% static 'js/view_data.js' %}"></script>
+
+<script>
+    // Trocar estatísticas quando mudar de aba
+    document.addEventListener('DOMContentLoaded', function() {
+        const dadosTab = document.getElementById('dados-tab');
+        const totaisTab = document.getElementById('totais-tab');
+        const statsDados = document.getElementById('stats-dados');
+        const statsTotais = document.getElementById('stats-totais');
+
+        if (dadosTab && totaisTab && statsDados && statsTotais) {
+            dadosTab.addEventListener('shown.bs.tab', function() {
+                statsDados.classList.remove('d-none');
+                statsTotais.classList.add('d-none');
+            });
+
+            totaisTab.addEventListener('shown.bs.tab', function() {
+                statsDados.classList.add('d-none');
+                statsTotais.classList.remove('d-none');
+            });
+        }
+    });
+
+    // Função para limpar todos os filtros
+    function limparTodosFiltros() {
+        document.querySelectorAll('.filter-input').forEach(inp => inp.value = '');
+        // Usar a função do view_data.js
+        if (typeof applyServerFilters === 'function') {
+            applyServerFilters();
+        }
+    }
+
+    // Redimensionamento de colunas (estilo Excel)
+    function initColumnResizer() {
+        const tables = document.querySelectorAll('.table');
+        if (!tables.length) return;
+
+        tables.forEach(table => {
+            const thead = table.querySelector('thead');
+            if (!thead) return;
+
+            const headerRow = thead.querySelector('tr');
+            if (!headerRow) return;
+
+            const headers = headerRow.querySelectorAll('th');
+            
+            headers.forEach((header, index) => {
+                // Verificar se já tem resizer
+                if (header.querySelector('.column-resizer')) return;
+
+                // Criar elemento resizer
+                const resizer = document.createElement('div');
+                resizer.className = 'column-resizer';
+                header.appendChild(resizer);
+                header.style.position = 'relative';
+
+                let startX, startWidth, isResizing = false;
+
+                const startResize = (e) => {
+                    isResizing = true;
+                    startX = e.pageX || e.touches?.[0]?.pageX;
+                    startWidth = header.offsetWidth;
+                    document.body.style.cursor = 'col-resize';
+                    document.body.style.userSelect = 'none';
+                    e.preventDefault();
+                    e.stopPropagation();
+                };
+
+                const doResize = (e) => {
+                    if (!isResizing) return;
+                    const currentX = e.pageX || e.touches?.[0]?.pageX;
+                    const diff = currentX - startX;
+                    const newWidth = Math.max(50, startWidth + diff); // Mínimo de 50px
+                    
+                    header.style.width = newWidth + 'px';
+                    header.style.minWidth = newWidth + 'px';
+                    
+                    // Aplicar a mesma largura em todas as células da coluna
+                    const colIndex = index;
+                    const allRows = table.querySelectorAll('tr');
+                    allRows.forEach(row => {
+                        const cells = row.querySelectorAll('th, td');
+                        if (cells[colIndex]) {
+                            cells[colIndex].style.width = newWidth + 'px';
+                            cells[colIndex].style.minWidth = newWidth + 'px';
+                        }
+                    });
+                };
+
+                const stopResize = () => {
+                    if (isResizing) {
+                        isResizing = false;
+                        document.body.style.cursor = '';
+                        document.body.style.userSelect = '';
+                    }
+                };
+
+                // Função para auto-expandir coluna no duplo clique
+                const autoResize = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // Calcular largura necessária
+                    let maxWidth = 0;
+                    
+                    // Verificar largura do título do cabeçalho
+                    const headerTitle = header.querySelector('.header-title');
+                    if (headerTitle) {
+                        const tempDiv = document.createElement('div');
+                        tempDiv.style.visibility = 'hidden';
+                        tempDiv.style.position = 'absolute';
+                        tempDiv.style.whiteSpace = 'nowrap';
+                        tempDiv.style.fontSize = window.getComputedStyle(headerTitle).fontSize;
+                        tempDiv.style.fontFamily = window.getComputedStyle(headerTitle).fontFamily;
+                        tempDiv.style.fontWeight = window.getComputedStyle(headerTitle).fontWeight;
+                        tempDiv.style.padding = window.getComputedStyle(headerTitle).padding;
+                        tempDiv.style.margin = window.getComputedStyle(headerTitle).margin;
+                        tempDiv.textContent = headerTitle.textContent || headerTitle.innerText;
+                        document.body.appendChild(tempDiv);
+                        maxWidth = Math.max(maxWidth, tempDiv.offsetWidth);
+                        document.body.removeChild(tempDiv);
+                    }
+                    
+                    // Verificar largura do input de filtro no cabeçalho
+                    const headerInput = header.querySelector('.filter-input');
+                    if (headerInput) {
+                        const tempInput = document.createElement('input');
+                        tempInput.style.visibility = 'hidden';
+                        tempInput.style.position = 'absolute';
+                        tempInput.style.fontSize = window.getComputedStyle(headerInput).fontSize;
+                        tempInput.style.fontFamily = window.getComputedStyle(headerInput).fontFamily;
+                        tempInput.style.padding = window.getComputedStyle(headerInput).padding;
+                        tempInput.value = headerInput.value || headerInput.placeholder || '';
+                        document.body.appendChild(tempInput);
+                        maxWidth = Math.max(maxWidth, tempInput.offsetWidth + 20); // +20 para padding
+                        document.body.removeChild(tempInput);
+                    }
+                    
+                    // Verificar largura de todas as células da coluna
+                    const colIndex = index;
+                    const allRows = table.querySelectorAll('tr');
+                    allRows.forEach(row => {
+                        const cells = row.querySelectorAll('th, td');
+                        const cell = cells[colIndex];
+                        if (cell) {
+                            const input = cell.querySelector('input');
+                            if (input) {
+                                // Criar elemento temporário para medir texto do input
+                                const tempInput = document.createElement('input');
+                                tempInput.style.visibility = 'hidden';
+                                tempInput.style.position = 'absolute';
+                                tempInput.style.fontSize = window.getComputedStyle(input).fontSize;
+                                tempInput.style.fontFamily = window.getComputedStyle(input).fontFamily;
+                                tempInput.style.padding = window.getComputedStyle(input).padding;
+                                tempInput.value = input.value || input.placeholder || '';
+                                document.body.appendChild(tempInput);
+                                maxWidth = Math.max(maxWidth, tempInput.offsetWidth + 20); // +20 para padding
+                                document.body.removeChild(tempInput);
+                            } else {
+                                const cellText = cell.textContent || cell.innerText;
+                                const tempDiv = document.createElement('div');
+                                tempDiv.style.visibility = 'hidden';
+                                tempDiv.style.position = 'absolute';
+                                tempDiv.style.whiteSpace = 'nowrap';
+                                tempDiv.style.fontSize = window.getComputedStyle(cell).fontSize;
+                                tempDiv.style.fontFamily = window.getComputedStyle(cell).fontFamily;
+                                tempDiv.style.padding = window.getComputedStyle(cell).padding;
+                                tempDiv.textContent = cellText;
+                                document.body.appendChild(tempDiv);
+                                maxWidth = Math.max(maxWidth, tempDiv.offsetWidth);
+                                document.body.removeChild(tempDiv);
+                            }
+                        }
+                    });
+                    
+                    // Aplicar largura calculada (mínimo 100px, máximo 500px)
+                    const newWidth = Math.min(500, Math.max(100, maxWidth + 30));
+                    
+                    header.style.width = newWidth + 'px';
+                    header.style.minWidth = newWidth + 'px';
+                    
+                    // Aplicar em todas as células da coluna
+                    allRows.forEach(row => {
+                        const cells = row.querySelectorAll('th, td');
+                        if (cells[colIndex]) {
+                            cells[colIndex].style.width = newWidth + 'px';
+                            cells[colIndex].style.minWidth = newWidth + 'px';
+                        }
+                    });
+                };
+
+                resizer.addEventListener('mousedown', startResize);
+                resizer.addEventListener('dblclick', autoResize);
+                document.addEventListener('mousemove', doResize);
+                document.addEventListener('mouseup', stopResize);
+                
+                // Suporte para touch (mobile)
+                resizer.addEventListener('touchstart', startResize);
+                document.addEventListener('touchmove', doResize);
+                document.addEventListener('touchend', stopResize);
+            });
+        });
+    }
+
+    // Inicializar redimensionamento quando a página carregar
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", function() {
+            setTimeout(initColumnResizer, 200);
+        });
+    } else {
+        setTimeout(initColumnResizer, 200);
+    }
+
+    // Reinicializar quando mudar de aba
+    document.addEventListener('shown.bs.tab', function() {
+        setTimeout(initColumnResizer, 100);
+    });
+</script>
+
+</body>
+</html>

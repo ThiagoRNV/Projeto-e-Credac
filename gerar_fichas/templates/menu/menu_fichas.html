@@ -1,0 +1,292 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<style>
+    .fichas-container {
+        margin-top: 2rem;
+    }
+
+    .fichas-header {
+        margin-bottom: 1.5rem;
+        color: #6b7280;
+        font-size: 0.95rem;
+    }
+
+    .ficha-accordion-item {
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        background: white;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .ficha-accordion-header {
+        padding: 1.25rem 1.5rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        background: white;
+        border: none;
+        width: 100%;
+        text-align: left;
+        transition: background-color 0.2s;
+    }
+
+    .ficha-accordion-header:hover {
+        background-color: #f9fafb;
+    }
+
+    .ficha-badge {
+        width: 36px;
+        height: 36px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: white;
+        flex-shrink: 0;
+    }
+
+    .ficha-header-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .ficha-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .ficha-subtitle {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin: 0;
+    }
+
+    .ficha-chevron {
+        font-size: 1.25rem;
+        color: #9ca3af;
+        transition: transform 0.3s ease;
+        flex-shrink: 0;
+    }
+
+    .ficha-accordion-header[aria-expanded="true"] .ficha-chevron {
+        transform: rotate(180deg);
+    }
+
+    .ficha-accordion-body {
+        padding: 0;
+        background: #f9fafb;
+    }
+
+    .ficha-list {
+        list-style: none;
+        margin: 0;
+        padding: 0.75rem 0;
+    }
+
+    .ficha-list-item {
+        padding: 0.75rem 1.5rem 0.75rem 4rem;
+        border-bottom: 1px solid #e5e7eb;
+        transition: background-color 0.2s;
+    }
+
+    .ficha-list-item:last-child {
+        border-bottom: none;
+    }
+
+    .ficha-list-item:hover {
+        background: linear-gradient(to right,rgb(196, 196, 196),rgb(201, 196, 196));
+        color: #111827;
+    }
+
+    .ficha-list-item a {
+        color: #374151;
+        text-decoration: none;
+        font-size: 0.9rem;
+        display: block;
+    }
+
+    .ficha-list-item a:hover {
+        color: #111827;
+    }
+
+    /* Cores para cada categoria */
+    .ficha-group-1 .ficha-badge {
+        background: #3b82f6;
+    }
+
+    .ficha-group-2 .ficha-badge {
+        background: #10b981;
+    }
+
+    .ficha-group-3 .ficha-badge {
+        background: #f59e0b;
+    }
+
+    .ficha-group-4 .ficha-badge {
+        background: #8b5cf6;
+    }
+
+    .ficha-group-5 .ficha-badge {
+        background: #ec4899;
+    }
+
+    .ficha-group-6 .ficha-badge {
+        background: #ef4444;
+    }
+
+    .ficha-group-7 .ficha-badge {
+        background: #06b6d4;
+    }
+</style>
+
+<div class="fichas-container" style="margin-top: 30px;">
+    <h2 class="text-center mb-4" style="color: #000; font-size: 1.5rem; font-weight: bold;">FICHAS PARA CONTROLE DE CUSTOS</h2>
+    <div class="row">
+        <div class="col-12 col-md-6">
+            <!-- Fichas 1 - Custeio -->
+            <div class="ficha-accordion-item ficha-group-1">
+                <button class="ficha-accordion-header" type="button" data-bs-toggle="collapse" data-bs-target="#ficha1" aria-expanded="false" aria-controls="ficha1">
+                    <div class="ficha-badge">1</div>
+                    <div class="ficha-header-content">
+                        <div class="ficha-title">Insumos</div>
+                        <div class="ficha-subtitle">Fichas de controle de insumos</div>
+                    </div>
+                    <i class="bi bi-chevron-down ficha-chevron"></i>
+                </button>
+                <div id="ficha1" class="collapse ficha-accordion-body">
+                    <ul class="ficha-list">
+                        <li class="ficha-list-item"><a href="{% url 'ficha1A' %}">1A - Controle de materiais</a></li>
+                        <li class="ficha-list-item"><a href="{% url 'ficha1B' %}">1B - Controle de terceirização</a></li>
+                        <li class="ficha-list-item"><a href="{% url 'ficha1C' %}">1C - Controle de energia elétrica</a></li>
+                        <li class="ficha-list-item"><a href="{% url 'ficha1D' %}">1D - Controle de telecomunicação</a></li>
+                        <li class="ficha-list-item"><a href="{% url 'ficha1E' %}">1E - Controle de aquisição de serviços de transportes</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            
+            <!-- Fichas 3 - Estoques -->
+            <div class="ficha-accordion-item ficha-group-3">
+                <button class="ficha-accordion-header" type="button" data-bs-toggle="collapse" data-bs-target="#ficha3" aria-expanded="false" aria-controls="ficha3">
+                    <div class="ficha-badge">3</div>
+                    <div class="ficha-header-content">
+                        <div class="ficha-title">Produtos acabados e mercadorias para revenda</div>
+                        <div class="ficha-subtitle">Fichas de controle de produtos acabados e mercadorias para revenda</div>
+                    </div>
+                    <i class="bi bi-chevron-down ficha-chevron"></i>
+                </button>
+                <div id="ficha3" class="collapse ficha-accordion-body">
+                    <ul class="ficha-list">
+                        <li class="ficha-list-item"><a href="{% url 'ficha3A' %}">3A - Controle de produtos acabados</a></li>
+                        <li class="ficha-list-item"><a href="{% url 'ficha3B' %}">3B - Controle de mercadorias de revenda</a></li>
+                        <li class="ficha-list-item"><a href="{% url 'ficha3C' %}">3C - Controle de custo agregado na industrialização para outro estabelecimento</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Fichas 5 - Técnicas e Cadastros -->
+            <div class="ficha-accordion-item ficha-group-5">
+                <button class="ficha-accordion-header" type="button" data-bs-toggle="collapse" data-bs-target="#ficha5" aria-expanded="false" aria-controls="ficha5">
+                    <div class="ficha-badge">5</div>
+                    <div class="ficha-header-content">
+                        <div class="ficha-title">Demonstrativos auxiliares</div>
+                        <div class="ficha-subtitle">Fichas de demonstrativos auxiliares</div>
+                    </div>
+                    <i class="bi bi-chevron-down ficha-chevron"></i>
+                </button>
+                <div id="ficha5" class="collapse ficha-accordion-body">
+                    <ul class="ficha-list">
+                        <li class="ficha-list-item"><a href="{% url 'ficha5A' %}">5A - Ficha técnica unitária da produção do período</a></li>
+                        <li class="ficha-list-item"><a href="{% url 'ficha5B' %}">5B - Materiais resultantes de perdas e sobras</a></li>
+                        <li class="ficha-list-item"><a href="{% url 'ficha5C' %}">5C - Cadastro de participantes</a></li>
+                        <li class="ficha-list-item"><a href="{% url 'ficha5D' %}">5D - Enquadramento legal da operação geradora do crédito acumulado</a></li>
+                        <li class="ficha-list-item"><a href="{% url 'ficha5F' %}">5F - Tabela de identificação do item</a></li>
+                        <li class="ficha-list-item"><a href="{% url 'ficha5G' %}">5G - Inventário de produtos em elaboração por material componente</a></li>
+                        <li class="ficha-list-item"><a href="{% url 'ficha5H' %}">5H - Dados da exportação indireta comprovada</a></li>
+                        <li class="ficha-list-item"><a href="{% url 'ficha5I' %}">5I - Cadastro de veículo transportador rodoviário</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-12 col-md-6">
+            <!-- Fichas 2 - Produção -->
+            <div class="ficha-accordion-item ficha-group-2">
+                <button class="ficha-accordion-header" type="button" data-bs-toggle="collapse" data-bs-target="#ficha2" aria-expanded="false" aria-controls="ficha2">
+                    <div class="ficha-badge">2</div>
+                    <div class="ficha-header-content">
+                        <div class="ficha-title">Processo produtivo</div>
+                        <div class="ficha-subtitle">Fichas de controle de processo produtivo</div>
+                    </div>
+                    <i class="bi bi-chevron-down ficha-chevron"></i>
+                </button>
+                <div id="ficha2" class="collapse ficha-accordion-body">
+                    <ul class="ficha-list">
+                        <li class="ficha-list-item"><a href="{% url 'ficha2A' %}">2A - Produtos em elaboração - Industrialização no estabelecimento</a></li>
+                        <li class="ficha-list-item"><a href="{% url 'ficha2B' %}">2B - Produtos em elaboração - Industrialização em outro estabelecimento</a></li>
+                        <li class="ficha-list-item"><a href="{% url 'ficha2C' %}">2C - Produtos em elaboração - Industrialização para outro estabelecimento</a></li>
+                        <li class="ficha-list-item"><a href="{% url 'ficha2D' %}">2D - Apuração do custo dos serviços de transporte</a></li>
+                        <li class="ficha-list-item"><a href="{% url 'ficha2E' %}">2E - Gastos gerais de fabricação</a></li>
+                        <li class="ficha-list-item"><a href="{% url 'ficha2F' %}">2F - Distribuição do custo e ICMS do insumo conjunto - Método do preço de saída</a></li>
+                        <li class="ficha-list-item"><a href="{% url 'ficha2G' %}">2G - Produção conjunta - Método da ficha técnica</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Fichas 4 - Rateios -->
+            <div class="ficha-accordion-item ficha-group-4">
+                <button class="ficha-accordion-header" type="button" data-bs-toggle="collapse" data-bs-target="#ficha4" aria-expanded="false" aria-controls="ficha4">
+                    <div class="ficha-badge">4</div>
+                    <div class="ficha-header-content">
+                        <div class="ficha-title">Rateios</div>
+                        <div class="ficha-subtitle">Fichas de rateios</div>
+                    </div>
+                    <i class="bi bi-chevron-down ficha-chevron"></i>
+                </button>
+                <div id="ficha4" class="collapse ficha-accordion-body">
+                    <ul class="ficha-list">
+                        <li class="ficha-list-item"><a href="{% url 'ficha4A' %}">4A - Rateio de energia elétrica</a></li>
+                        <li class="ficha-list-item"><a href="{% url 'ficha4B' %}">4B - Apuração do índice de alocação de custo e ICMS do insumo conjunto</a></li>
+                        <li class="ficha-list-item"><a href="{% url 'ficha4C' %}">4C - Rateio dos gastos gerais de fabricação</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Fichas 6 - Demonstrativos -->
+            <div class="ficha-accordion-item ficha-group-6">
+                <button class="ficha-accordion-header" type="button" data-bs-toggle="collapse" data-bs-target="#ficha6" aria-expanded="false" aria-controls="ficha6">
+                    <div class="ficha-badge">6</div>
+                    <div class="ficha-header-content">
+                        <div class="ficha-title">Geração de crédito acumulado do ICMS</div>
+                        <div class="ficha-subtitle">Fichas de geração de crédito acumulado do ICMS</div>
+                    </div>
+                    <i class="bi bi-chevron-down ficha-chevron"></i>
+                </button>
+                <div id="ficha6" class="collapse ficha-accordion-body">
+                    <ul class="ficha-list">
+                        <li class="ficha-list-item"><a href="{% url 'ficha6A' %}">6A - Operações com aplicação de alíquotas diversificadas</a></li>
+                        <li class="ficha-list-item"><a href="{% url 'ficha6B' %}">6B - Operações com redução de base de cálculo</a></li>
+                        <li class="ficha-list-item"><a href="{% url 'ficha6C' %}">6C - Exportações diretas</a></li>
+                        <li class="ficha-list-item"><a href="{% url 'ficha6D' %}">6D - Operações para a zona franca de Manaus</a></li>
+                        <li class="ficha-list-item"><a href="{% url 'ficha6E' %}">6E - Operações sem pagamento de imposto - Demais casos</a></li>
+                        <li class="ficha-list-item"><a href="{% url 'ficha6F' %}">6F - Demonstrativo das operações não geradoras de crédito acumulado</a></li>
+                        <li class="ficha-list-item"><a href="{% url 'ficha6G' %}">6G - Demonstrativo das prestações de serviço de transporte - Crédito outorgado</a></li>
+                        <li class="ficha-list-item"><a href="{% url 'ficha6H' %}">6H - Demonstrativo das prestações de serviço de transporte - Combustível e Redespacho</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

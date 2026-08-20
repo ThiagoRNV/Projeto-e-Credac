@@ -1,0 +1,219 @@
+/**
+ * RNV Design System - Padrão visual unificado
+ * Usado em: validacao, gerar_arquivo, cadastro, etc.
+ */
+
+/* === Dashboard / Container principal === */
+.rnv-dashboard {
+  background: var(--page-bg, #eef3fb);
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+/* === Títulos e labels === */
+.rnv-section-title {
+  font-size: 1.4em;
+  font-weight: 700;
+  margin-bottom: 0;
+}
+
+.rnv-last-update {
+  color: #617085;
+  font-size: 0.98em;
+}
+
+/* === Cards === */
+.rnv-card,
+.rnv-custom-card {
+  border-radius: 13px;
+  box-shadow: 0 2px 12px #00335517;
+  background: #fff;
+  margin-bottom: 2rem;
+}
+
+.rnv-card-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  font-size: 1.08em;
+  font-weight: 600;
+}
+
+.rnv-card-header-primary {
+  background: #eff6ff;
+}
+
+.rnv-card-header-success {
+  background: #d9fff4;
+}
+
+.rnv-card-body {
+  padding: 1rem 1.25rem;
+}
+
+.rnv-menu-card-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: #e9f0fd;
+  color: #3489d9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+
+.rnv-menu-card-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #25305e;
+  margin-bottom: 0.25rem;
+  text-align: center;
+}
+
+.rnv-menu-card-desc {
+  font-size: 0.95rem;
+  color: #617085;
+  text-align: center;
+}
+
+/* === Mensagens (alerts) === */
+.rnv-alert {
+  font-size: 0.98em;
+  border-radius: 11px;
+  text-align: center;
+  padding: 0.5rem 1rem;
+}
+
+/* === Tabelas === */
+.rnv-table thead {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: #617085;
+
+/* === Status dots === */
+.rnv-status-dot {
+  width: 11px;
+  height: 11px;
+  display: inline-block;
+  border-radius: 50%;
+  margin: 0 2px;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px #0002;
+  vertical-align: middle;
+}
+
+.rnv-dot-green { background: #21d487; border-color: #21d487; }
+.rnv-dot-red { background: #e35d5d; border-color: #e35d5d; }
+
+/* === Badges === */
+.rnv-badge {
+  font-size: 0.96em;
+  padding: 2px 10px;
+  border-radius: 13px;
+  font-weight: 500;
+  margin-right: 3px;
+  background: #ecf4ff;
+  color: #245788;
+}
+
+.rnv-badge-primary {
+  background: #ecf4ff;
+  color: #245788;
+}
+
+.rnv-badge-success {
+  background: #d9fff1;
+  color: #189e5b;
+}
+
+.rnv-badge-pending {
+  background: #eaf5fd;
+  color: #0c67ce;
+}
+
+.rnv-badge-warning,
+.rnv-badge-empty {
+  background: #fef5e4;
+  color: #dba11b;
+}
+
+/* === Botões de ação === */
+.rnv-action-btn {
+  font-size: 0.97em;
+  padding: 5px 14px;
+  border-radius: 99px;
+}
+
+/* === Formulários === */
+.rnv-form-label {
+  color: #34426e;
+  font-size: 1.09rem;
+  letter-spacing: 0.5px;
+}
+
+.rnv-form-select {
+  border-radius: 14px;
+  border-color: #d4dbe8;
+  box-shadow: 0 1px 2.5px rgba(69,111,197,0.10);
+  font-size: 1rem;
+  color: #202942;
+  background: #f7f8fc;
+}
+
+.rnv-form-select:focus {
+  border-color: #d4dbe8;
+  box-shadow: 0 1px 2.5px rgba(69,111,197,0.10);
+  outline: none;
+}
+
+/* === Cards de menu (links clicáveis) === */
+.rnv-menu-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 280px;
+  max-width: 350px;
+  background: #fff;
+  border-radius: 13px;
+  box-shadow: 0 2px 12px #00335517;
+  padding: 2rem 1.75rem;
+  margin: 0.5rem;
+  cursor: pointer;
+  border: 1px solid rgba(0,0,0,0.04);
+  text-decoration: none !important;
+  color: inherit;
+  transition: all 0.2s ease;
+}
+
+.rnv-menu-card:hover {
+  box-shadow: 0 8px 24px #00335525;
+  transform: translateY(-4px);
+  color: inherit;
+}
+}
+
+.rnv-table tbody tr:hover td {
+  background-color: #f9fafc;
+}
+
+/* === Empty state === */
+.rnv-empty {
+  text-align: center;
+  padding: 2rem;
+  color: #617085;
+}
+
+.rnv-empty i {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.6;
+}
+
+/* === Responsivo === */
+@media (max-width: 768px) {
+  .rnv-dashboard { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+  .rnv-menu-card { min-width: 0; width: 100%; max-width: 95%; }
+}

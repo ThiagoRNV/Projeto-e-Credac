@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+{% load static %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/view_data.css' %}?v=9.0">
+<style>
+  .vd-nav-tabs {
+    display: flex;
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-bottom: 2px solid #e2e8f0;
+    flex-shrink: 0;
+  }
+  .vd-nav-tabs .vd-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.6rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #64748b;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .vd-nav-tabs .vd-tab-btn:hover {
+    color: #2563eb;
+    background: #f0f7ff;
+  }
+  .vd-nav-tabs .vd-tab-btn.active {
+    color: #2563eb;
+    background: #fff;
+    border-bottom-color: #2563eb;
+  }
+  /* Mantém a cadeia flex da página: overflow da tabela + footer fixo embaixo */
+  .vd-tab-content {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .vd-tab-content > .tab-pane {
+    flex: 1;
+    min-height: 0;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+  .vd-tab-content > .tab-pane.active {
+    display: flex;
+  }
+  .vd-tab-content > .tab-pane .vd-metrics,
+  .vd-tab-content > .tab-pane .vd-toolbar {
+    flex-shrink: 0;
+  }
+  .vd-tab-empty {
+    flex: 1;
+    min-height: 0;
+    background: #fff;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 12px;
+    padding: 3rem 1.5rem;
+    text-align: center;
+    color: #94a3b8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .vd-tab-empty i {
+    display: block;
+    font-size: 2.25rem;
+    margin-bottom: 0.75rem;
+  }
+  .vd-tab-empty p {
+    margin: 0;
+    font-size: 0.9375rem;
+  }
+</style>
+</head>
+<body>
+
+{% if messages %}
+  <div class="vd-messages" style="position: fixed; top: 30px; right: 30px; z-index: 1050; min-width: 320px;">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show vd-toast-message py-2 mb-2"
+      role="alert" 
+      style="font-size:0.87rem;box-shadow:0 2px 8px rgba(0,0,0,0.12);">
+      {% if message.tags == 'error' %}<i class="bi bi-x-circle me-2"></i>
+      {% elif message.tags == 'success' %}<i class="bi bi-check-circle me-2"></i>
+      {% elif message.tags == 'warning' %}<i class="bi bi-exclamation-triangle me-2"></i>
+      {% else %}<i class="bi bi-info-circle me-2"></i>{% endif %}
+      {{ message }}
+    </div>
+    {% endfor %}
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      setTimeout(function() {
+        document.querySelectorAll('.vd-toast-message').forEach(function(el) {
+          let bsAlert = bootstrap.Alert.getOrCreateInstance(el);
+          bsAlert.close();
+        });
+      }, 5000);
+    });
+  </script>
+{% endif %}
+<div id="data-holder"
+     data-empresa-id="{{ empresa_id }}"
+     data-url-salvar="{% url 'view_dados_outros_modelos' %}"
+     data-url-exportar="{% url 'view_dados_outros_modelos' %}"
+     data-current-query="{{ current_query }}"
+     data-somente-visualizacao="{% if somente_visualizacao %}true{% else %}false{% endif %}">
+</div>
+
+<div class="vd-view-page">
+  <!-- Header -->
+  <header class="vd-view-header">
+    <div class="vd-view-header-left">
+      <a href="{% url 'outros_modelos_em_andamento' %}" class="vd-view-back" aria-label="Voltar">
+        <i class="bi bi-arrow-left"></i>
+      </a>
+      <div>
+        <h1 class="vd-view-title">{{ texto }}</h1>
+        <p class="vd-view-subtitle" style='font-style: italic;'>
+          Gerencie e visualize todos os serviços importados do SPED
+          {% if mes_sped %} · <strong>Período de: {{mes_sped}}</strong>{% endif %}
+        </p>
+      </div>
+    </div>
+    <div class="vd-view-actions">
+      <button type="button" class="vd-btn" onclick="atualizarDados()">
+        <i class="bi bi-arrow-clockwise"></i> Atualizar dados
+      </button>
+      <button type="button" class="vd-btn" onclick="exportarRelatorio()">
+        <i class="bi bi-download"></i> Exportar relatório
+      </button>
+      {% if not somente_visualizacao %}
+      <button type="button" class="vd-btn vd-btn-primary" onclick="salvarAlteracoes()">
+        <i class="bi bi-floppy"></i> Salvar alterações
+      </button>
+      {% endif %}
+    </div>
+  </header>
+
+  <!-- Abas -->
+  <ul class="vd-nav-tabs" role="tablist">
+    <li role="presentation">
+      <button type="button" class="vd-tab-btn active" id="tab-transportes-btn"
+              data-bs-toggle="tab" data-bs-target="#tab-transportes"
+              role="tab" aria-controls="tab-transportes" aria-selected="true">
+        <i class="bi bi-truck"></i> Transportes
+      </button>
+    </li>
+    <li role="presentation">
+      <button type="button" class="vd-tab-btn" id="tab-energia-btn"
+              data-bs-toggle="tab" data-bs-target="#tab-energia"
+              role="tab" aria-controls="tab-energia" aria-selected="false">
+        <i class="bi bi-lightning-charge"></i> Energia
+      </button>
+    </li>
+    <li role="presentation">
+      <button type="button" class="vd-tab-btn" id="tab-comunicacao-btn"
+              data-bs-toggle="tab" data-bs-target="#tab-comunicacao"
+              role="tab" aria-controls="tab-comunicacao" aria-selected="false">
+        <i class="bi bi-telephone"></i> Comunicação
+      </button>
+    </li>
+  </ul>
+
+  <div class="tab-content vd-tab-content">
+
+  <!-- Aba 1: Transportes -->
+  <div class="tab-pane fade show active" id="tab-transportes" role="tabpanel" aria-labelledby="tab-transportes-btn">
+
+  <!-- Métricas -->
+  <div class="vd-metrics">
+    <div class="vd-metric-card">
+      <div class="vd-metric-icon blue"><i class="bi bi-list-ul"></i></div>
+      <div>
+        <p class="vd-metric-value">{{ total_registros }}</p>
+        <p class="vd-metric-label">Documentos (D100)</p>
+      </div>
+    </div>
+    <div class="vd-metric-card">
+      <div class="vd-metric-icon green"><i class="bi bi-currency-dollar"></i></div>
+      <div>
+        <p class="vd-metric-value">R$ {{ total_vl_opr_geral|floatformat:2 }}</p>
+        <p class="vd-metric-label">Valor operação</p>
+      </div>
+    </div>
+    <div class="vd-metric-card">
+      <div class="vd-metric-icon purple"><i class="bi bi-receipt"></i></div>
+      <div>
+        <p class="vd-metric-value">R$ {{ total_vl_icms_geral|floatformat:2 }}</p>
+        <p class="vd-metric-label">Valor ICMS</p>
+      </div>
+    </div>
+    <div class="vd-metric-card">
+      <div class="vd-metric-icon orange"><i class="bi bi-truck"></i></div>
+      <div>
+        <p class="vd-metric-value">R$ {{ total_vl_serv_geral|floatformat:2 }}</p>
+        <p class="vd-metric-label">Valor serviço</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="vd-toolbar">
+    <div class="vd-search-wrap">
+      <i class="bi bi-search"></i>
+      <input type="search"
+             id="vd-global-search"
+             class="vd-search-input"
+             placeholder="Buscar em todas as colunas..."
+             value="{{ busca|default:'' }}">
+    </div>
+    <div class="vd-toolbar-right">
+      <span class="vd-selection-info" id="vd-selection-count">0 selecionado(s)</span>
+      <button type="button" class="vd-btn" id="vd-btn-select-all">
+        <i class="bi bi-check2-square"></i> Selecionar todos
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabela -->
+  <div class="vd-table-card">
+    <div class="vd-table-scroll">
+      {% if total_registros %}
+      <table class="vd-data-table">
+        <thead>
+          <tr>
+            <th class='text-center'>Registro</th>
+            <th class='text-center'>Tipo</th>
+            <th class='text-center'>CNPJ/CPF</th>
+            <th class='text-center'>Participante</th>
+            <th class='text-center'>Nº Doc</th>
+            <th class='text-center'>Chave CT-e</th>
+            <th class='text-center'>Série</th>
+            <th class='text-center'>Emissão</th>
+            <th class='text-center'>Valor Doc</th>
+            <th class='text-center'>Valor Serviço</th>
+            <th class='text-center'>CFOP</th>
+            <th class='text-center'>CST</th>
+            <th class='text-center'>Aliq ICMS</th>
+            <th class='text-center'>Valor Operação</th>
+            <th class='text-center'>Base ICMS</th>
+            <th class='text-center'>Valor ICMS</th>
+            <th class='text-center'>Red. BC/ICMS-ST</th>
+            <th class='text-center'>Cód. Obs</th>
+          </tr>
+          <tr class="filter-row">
+            <th></th>
+            <th><input type="text" name="tipo" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.tipo }}"></th>
+            <th><input type="text" name="cnpj_cpf" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.cnpj_cpf }}"></th>
+            <th><input type="text" name="nome" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.nome }}"></th>
+            <th><input type="text" name="num_doc" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.num_doc }}"></th>
+            <th><input type="text" name="chv_cte" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.chv_cte }}"></th>
+            <th><input type="text" name="ser" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.ser }}"></th>
+            <th><input type="text" name="dt_doc" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.dt_doc }}"></th>
+            <th><input type="text" name="vl_doc" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.vl_doc }}"></th>
+            <th><input type="text" name="vl_serv" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.vl_serv }}"></th>
+            <th><input type="text" name="cfop" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.cfop }}"></th>
+            <th><input type="text" name="cst_icms" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.cst_icms }}"></th>
+            <th><input type="text" name="aliq_icms" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.aliq_icms }}"></th>
+            <th><input type="text" name="vl_opr" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.vl_opr }}"></th>
+            <th><input type="text" name="vl_bc_icms" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.vl_bc_icms }}"></th>
+            <th><input type="text" name="vl_icms" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.vl_icms }}"></th>
+            <th><input type="text" name="vl_red_bc" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.vl_red_bc }}"></th>
+            <th><input type="text" name="cod_obs" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.cod_obs }}"></th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for doc in dados_sped %}
+            <!-- Linha do documento D100 -->
+            <tr class="vd-row-d100"
+                data-cod-part="{{ doc.cod_part|default_if_none:'' }}"
+                data-d100-id="{{ doc.d100_id }}">
+                <td class='text-center'><strong><span class="vd-badge vd-badge-wip">{{ doc.reg|default:"D100" }}</span></strong></td>
+                <td>
+                    {% if somente_visualizacao %}
+                <span class="vd-tipo-badge {% if doc.tipo_nota|lower == 'entrada' %}entrada{% else %}saida{% endif %}">
+                    {{ doc.tipo_nota|default:"-" }}
+                </span>
+                    {% else %}
+                <input type="text" value="{{ doc.tipo_nota }}" class="input_cells" {% if somente_visualizacao %}readonly{% endif %}>
+                    {% endif %}
+                </td>
+                <td><input type="text" value="{{ doc.cnpj_cpf|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" value="{{ doc.nome|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" value="{{ doc.num_doc|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" value="{{ doc.chv_cte|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" value="{{ doc.ser|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" value="{{ doc.dt_doc|default_if_none:'' }}" class="input_cells text-center" readonly></td>
+                <td><input type="text" inputmode="decimal" value="{{ doc.vl_doc|default_if_none:'' }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" inputmode="decimal" value="{{ doc.vl_serv|default_if_none:'' }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <!-- Linhas analíticas D190 do documento acima -->
+            {% for item in doc.d190s %}
+            <tr class="vd-row-d190" data-d190-id="{{ item.d190_id }}">
+                <td class='text-center'><strong><span class="vd-badge vd-badge-done">{{ item.reg|default:"D190" }}</span></strong></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td><input type="text" value="{{ item.cfop|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" value="{{ item.cst_icms|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" inputmode="decimal" value="{{ item.aliq_icms|default_if_none:'' }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" inputmode="decimal" value="{{ item.vl_opr|default_if_none:'' }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" inputmode="decimal" value="{{ item.vl_bc_icms|default_if_none:'' }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" inputmode="decimal" value="{{ item.vl_icms|default_if_none:'' }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" inputmode="decimal" value="{{ item.vl_red_bc|default_if_none:'' }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" value="{{ item.cod_obs|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+            </tr>
+            {% endfor %}
+        {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="vd-empty-state">
+        <i class="bi bi-inbox"></i>
+        Nenhum registro encontrado para este período.
+      </div>
+      {% endif %}
+    </div>
+
+    {% if total_registros %}
+    <div class="vd-table-footer">
+      <span>
+        Exibindo {{ dados_sped.start_index }} a {{ dados_sped.end_index }} de {{ dados_sped.paginator.count }} documentos (D100)
+      </span>
+      <div class="vd-pagination-wrap">
+        <div class="vd-page-size">
+          <form method="get" id="vd-page-size-form" class="vd-page-size-form">
+            {% for key, value in request.GET.items %}
+              {% if key != 'per_page' and key != 'page' %}
+              <input type="hidden" name="{{ key }}" value="{{ value }}">
+              {% endif %}
+            {% endfor %}
+            <label for="vd-page-size">Linhas por página:</label>
+            <select name="per_page" id="vd-page-size" onchange="this.form.submit()">
+              <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+              <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+              <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+              <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+            </select>
+          </form>
+
+        </div>
+        <div class="vd-page-btns">
+          {% if prev_page_url %}
+          <a class="vd-page-btn" href="{{ prev_page_url }}"><i class="bi bi-chevron-left"></i></a>
+          {% else %}
+          <span class="vd-page-btn disabled"><i class="bi bi-chevron-left"></i></span>
+          {% endif %}
+
+          {% for page in page_urls %}
+            {% if page.is_current %}
+            <span class="vd-page-btn active">{{ page.number }}</span>
+            {% elif page.number == 1 or page.number == dados_sped.paginator.num_pages or page.number >= dados_sped.number|add:"-2" and page.number <= dados_sped.number|add:"2" %}
+            <a class="vd-page-btn" href="{{ page.url }}">{{ page.number }}</a>
+            {% elif page.number == dados_sped.number|add:"-3" or page.number == dados_sped.number|add:"3" %}
+            <span class="vd-page-btn disabled">…</span>
+            {% endif %}
+          {% endfor %}
+
+          {% if next_page_url %}
+          <a class="vd-page-btn" href="{{ next_page_url }}"><i class="bi bi-chevron-right"></i></a>
+          {% else %}
+          <span class="vd-page-btn disabled"><i class="bi bi-chevron-right"></i></span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  </div><!-- /Aba 1: Transportes -->
+
+  <!-- Aba 2: Energia -->
+  <div class="tab-pane fade" id="tab-energia" role="tabpanel" aria-labelledby="tab-energia-btn">
+
+  {% if total_registros_energia %}
+  <!-- Métricas -->
+  <div class="vd-metrics">
+    <div class="vd-metric-card">
+      <div class="vd-metric-icon blue"><i class="bi bi-list-ul"></i></div>
+      <div>
+        <p class="vd-metric-value">{{ total_registros_energia }}</p>
+        <p class="vd-metric-label">Documentos (C500)</p>
+      </div>
+    </div>
+    <div class="vd-metric-card">
+      <div class="vd-metric-icon green"><i class="bi bi-currency-dollar"></i></div>
+      <div>
+        <p class="vd-metric-value">R$ {{ total_vl_opr_energia|floatformat:2 }}</p>
+        <p class="vd-metric-label">Valor operação</p>
+      </div>
+    </div>
+    <div class="vd-metric-card">
+      <div class="vd-metric-icon purple"><i class="bi bi-receipt"></i></div>
+      <div>
+        <p class="vd-metric-value">R$ {{ total_vl_icms_energia|floatformat:2 }}</p>
+        <p class="vd-metric-label">Valor ICMS</p>
+      </div>
+    </div>
+    <div class="vd-metric-card">
+      <div class="vd-metric-icon orange"><i class="bi bi-lightning-charge"></i></div>
+      <div>
+        <p class="vd-metric-value">R$ {{ total_vl_forn_energia|floatformat:2 }}</p>
+        <p class="vd-metric-label">Valor fornecido</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabela -->
+  <div class="vd-table-card">
+    <div class="vd-table-scroll">
+      <table class="vd-data-table">
+        <thead>
+          <tr>
+            <th class='text-center'>Registro</th>
+            <th class='text-center'>Tipo</th>
+            <th class='text-center'>CNPJ/CPF</th>
+            <th class='text-center'>Participante</th>
+            <th class='text-center'>Nº Doc</th>
+            <th class='text-center'>Chave DOC-e</th>
+            <th class='text-center'>Série</th>
+            <th class='text-center'>Emissão</th>
+            <th class='text-center'>Valor Doc</th>
+            <th class='text-center'>Valor Fornecido</th>
+            <th class='text-center'>CFOP</th>
+            <th class='text-center'>CST</th>
+            <th class='text-center'>Aliq ICMS</th>
+            <th class='text-center'>Valor Operação</th>
+            <th class='text-center'>Base ICMS</th>
+            <th class='text-center'>Valor ICMS</th>
+            <th class='text-center'>Base ICMS-ST</th>
+            <th class='text-center'>Valor ICMS-ST</th>
+            <th class='text-center'>Red. BC</th>
+            <th class='text-center'>Cód. Obs</th>
+          </tr>
+          <tr class="filter-row">
+            <th></th>
+            <th><input type="text" name="en_tipo" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_energia.tipo }}"></th>
+            <th><input type="text" name="en_cnpj_cpf" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_energia.cnpj_cpf }}"></th>
+            <th><input type="text" name="en_nome" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_energia.nome }}"></th>
+            <th><input type="text" name="en_num_doc" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_energia.num_doc }}"></th>
+            <th><input type="text" name="en_chv_doce" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_energia.chv_doce }}"></th>
+            <th><input type="text" name="en_ser" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_energia.ser }}"></th>
+            <th><input type="text" name="en_dt_doc" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_energia.dt_doc }}"></th>
+            <th><input type="text" name="en_vl_doc" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_energia.vl_doc }}"></th>
+            <th><input type="text" name="en_vl_forn" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_energia.vl_forn }}"></th>
+            <th><input type="text" name="en_cfop" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_energia.cfop }}"></th>
+            <th><input type="text" name="en_cst_icms" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_energia.cst_icms }}"></th>
+            <th><input type="text" name="en_aliq_icms" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_energia.aliq_icms }}"></th>
+            <th><input type="text" name="en_vl_opr" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_energia.vl_opr }}"></th>
+            <th><input type="text" name="en_vl_bc_icms" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_energia.vl_bc_icms }}"></th>
+            <th><input type="text" name="en_vl_icms" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_energia.vl_icms }}"></th>
+            <th><input type="text" name="en_vl_bc_icms_st" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_energia.vl_bc_icms_st }}"></th>
+            <th><input type="text" name="en_vl_icms_st" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_energia.vl_icms_st }}"></th>
+            <th><input type="text" name="en_vl_red_bc" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_energia.vl_red_bc }}"></th>
+            <th><input type="text" name="en_cod_obs" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_energia.cod_obs }}"></th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for doc in dados_energia %}
+            <!-- Linha do documento C500 -->
+            <tr class="vd-row-d100"
+                data-cod-part="{{ doc.cod_part|default_if_none:'' }}"
+                data-c500-id="{{ doc.c500_id }}">
+                <td class='text-center'><strong><span class="vd-badge vd-badge-wip">{{ doc.reg|default:"C500" }}</span></strong></td>
+                <td>
+                    {% if somente_visualizacao %}
+                <span class="vd-tipo-badge {% if doc.tipo_nota|lower == 'entrada' %}entrada{% else %}saida{% endif %}">
+                    {{ doc.tipo_nota|default:"-" }}
+                </span>
+                    {% else %}
+                <input type="text" value="{{ doc.tipo_nota }}" class="input_cells">
+                    {% endif %}
+                </td>
+                <td><input type="text" value="{{ doc.cnpj_cpf|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" value="{{ doc.nome|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" value="{{ doc.num_doc|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" value="{{ doc.chv_doce }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" value="{{ doc.ser }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" value="{{ doc.dt_doc|default_if_none:'' }}" class="input_cells text-center" readonly></td>
+                <td><input type="text" inputmode="decimal" value="{{ doc.vl_doc }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" inputmode="decimal" value="{{ doc.vl_forn }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <!-- Linhas analíticas C590 do documento acima -->
+            {% for item in doc.c590s %}
+            <tr class="vd-row-d190" data-c590-id="{{ item.c590_id }}">
+                <td class='text-center'><strong><span class="vd-badge vd-badge-done">{{ item.reg|default:"C590" }}</span></strong></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td><input type="text" value="{{ item.cfop }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" value="{{ item.cst_icms }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" inputmode="decimal" value="{{ item.aliq_icms }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" inputmode="decimal" value="{{ item.vl_opr }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" inputmode="decimal" value="{{ item.vl_bc_icms }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" inputmode="decimal" value="{{ item.vl_icms }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" inputmode="decimal" value="{{ item.vl_bc_icms_st }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" inputmode="decimal" value="{{ item.vl_icms_st }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" inputmode="decimal" value="{{ item.vl_red_bc }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" value="{{ item.cod_obs }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+            </tr>
+            {% endfor %}
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="vd-table-footer">
+      <span>
+        Exibindo {{ dados_energia.start_index }} a {{ dados_energia.end_index }} de {{ dados_energia.paginator.count }} documentos (C500)
+      </span>
+      <div class="vd-pagination-wrap">
+        <div class="vd-page-btns">
+          {% if prev_page_url_energia %}
+          <a class="vd-page-btn" href="{{ prev_page_url_energia }}#tab-energia"><i class="bi bi-chevron-left"></i></a>
+          {% else %}
+          <span class="vd-page-btn disabled"><i class="bi bi-chevron-left"></i></span>
+          {% endif %}
+
+          {% for page in page_urls_energia %}
+            {% if page.is_current %}
+            <span class="vd-page-btn active">{{ page.number }}</span>
+            {% elif page.number == 1 or page.number == dados_energia.paginator.num_pages or page.number >= dados_energia.number|add:"-2" and page.number <= dados_energia.number|add:"2" %}
+            <a class="vd-page-btn" href="{{ page.url }}#tab-energia">{{ page.number }}</a>
+            {% elif page.number == dados_energia.number|add:"-3" or page.number == dados_energia.number|add:"3" %}
+            <span class="vd-page-btn disabled">…</span>
+            {% endif %}
+          {% endfor %}
+
+          {% if next_page_url_energia %}
+          <a class="vd-page-btn" href="{{ next_page_url_energia }}#tab-energia"><i class="bi bi-chevron-right"></i></a>
+          {% else %}
+          <span class="vd-page-btn disabled"><i class="bi bi-chevron-right"></i></span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="vd-tab-empty">
+    <i class="bi bi-lightning-charge"></i>
+    <p>Nenhum registro de <strong>Energia</strong> para este período.</p>
+  </div>
+  {% endif %}
+
+  </div><!-- /Aba 2: Energia -->
+
+  <!-- Aba 3: Comunicação -->
+  <div class="tab-pane fade" id="tab-comunicacao" role="tabpanel" aria-labelledby="tab-comunicacao-btn">
+
+  {% if total_registros_comunicacao %}
+  <!-- Métricas -->
+  <div class="vd-metrics">
+    <div class="vd-metric-card">
+      <div class="vd-metric-icon blue"><i class="bi bi-list-ul"></i></div>
+      <div>
+        <p class="vd-metric-value">{{ total_registros_comunicacao }}</p>
+        <p class="vd-metric-label">Documentos (D500)</p>
+      </div>
+    </div>
+    <div class="vd-metric-card">
+      <div class="vd-metric-icon green"><i class="bi bi-currency-dollar"></i></div>
+      <div>
+        <p class="vd-metric-value">R$ {{ total_vl_opr_comunicacao|floatformat:2 }}</p>
+        <p class="vd-metric-label">Valor operação</p>
+      </div>
+    </div>
+    <div class="vd-metric-card">
+      <div class="vd-metric-icon purple"><i class="bi bi-receipt"></i></div>
+      <div>
+        <p class="vd-metric-value">R$ {{ total_vl_icms_comunicacao|floatformat:2 }}</p>
+        <p class="vd-metric-label">Valor ICMS</p>
+      </div>
+    </div>
+    <div class="vd-metric-card">
+      <div class="vd-metric-icon orange"><i class="bi bi-telephone"></i></div>
+      <div>
+        <p class="vd-metric-value">R$ {{ total_vl_serv_comunicacao|floatformat:2 }}</p>
+        <p class="vd-metric-label">Valor serviço</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabela -->
+  <div class="vd-table-card">
+    <div class="vd-table-scroll">
+      <table class="vd-data-table">
+        <thead>
+          <tr>
+            <th class='text-center'>Registro</th>
+            <th class='text-center'>Tipo</th>
+            <th class='text-center'>CNPJ/CPF</th>
+            <th class='text-center'>Participante</th>
+            <th class='text-center'>Nº Doc</th>
+            <th class='text-center'>Série</th>
+            <th class='text-center'>Emissão</th>
+            <th class='text-center'>Valor Doc</th>
+            <th class='text-center'>Valor Serviço</th>
+            <th class='text-center'>CFOP</th>
+            <th class='text-center'>CST</th>
+            <th class='text-center'>Aliq ICMS</th>
+            <th class='text-center'>Valor Operação</th>
+            <th class='text-center'>Base ICMS</th>
+            <th class='text-center'>Valor ICMS</th>
+            <th class='text-center'>Base ICMS-ST</th>
+            <th class='text-center'>Valor ICMS-ST</th>
+            <th class='text-center'>Red. BC</th>
+            <th class='text-center'>Cód. Obs</th>
+          </tr>
+          <tr class="filter-row">
+            <th></th>
+            <th><input type="text" name="com_tipo" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_comunicacao.tipo }}"></th>
+            <th><input type="text" name="com_cnpj_cpf" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_comunicacao.cnpj_cpf }}"></th>
+            <th><input type="text" name="com_nome" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_comunicacao.nome }}"></th>
+            <th><input type="text" name="com_num_doc" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_comunicacao.num_doc }}"></th>
+            <th><input type="text" name="com_ser" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_comunicacao.ser }}"></th>
+            <th><input type="text" name="com_dt_doc" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_comunicacao.dt_doc }}"></th>
+            <th><input type="text" name="com_vl_doc" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_comunicacao.vl_doc }}"></th>
+            <th><input type="text" name="com_vl_serv" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_comunicacao.vl_serv }}"></th>
+            <th><input type="text" name="com_cfop" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_comunicacao.cfop }}"></th>
+            <th><input type="text" name="com_cst_icms" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_comunicacao.cst_icms }}"></th>
+            <th><input type="text" name="com_aliq_icms" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_comunicacao.aliq_icms }}"></th>
+            <th><input type="text" name="com_vl_opr" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_comunicacao.vl_opr }}"></th>
+            <th><input type="text" name="com_vl_bc_icms" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_comunicacao.vl_bc_icms }}"></th>
+            <th><input type="text" name="com_vl_icms" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_comunicacao.vl_icms }}"></th>
+            <th><input type="text" name="com_vl_bc_icms_st" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_comunicacao.vl_bc_icms_st }}"></th>
+            <th><input type="text" name="com_vl_icms_st" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_comunicacao.vl_icms_st }}"></th>
+            <th><input type="text" name="com_vl_red_bc" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_comunicacao.vl_red_bc }}"></th>
+            <th><input type="text" name="com_cod_obs" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_comunicacao.cod_obs }}"></th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for doc in dados_comunicacao %}
+            <!-- Linha do documento D500 -->
+            <tr class="vd-row-d100"
+                data-cod-part="{{ doc.cod_part|default_if_none:'' }}"
+                data-d500-id="{{ doc.d500_id }}">
+                <td class='text-center'><strong><span class="vd-badge vd-badge-wip">{{ doc.reg|default:"D500" }}</span></strong></td>
+                <td>
+                    {% if somente_visualizacao %}
+                <span class="vd-tipo-badge {% if doc.tipo_nota|lower == 'entrada' %}entrada{% else %}saida{% endif %}">
+                    {{ doc.tipo_nota|default:"-" }}
+                </span>
+                    {% else %}
+                <input type="text" value="{{ doc.tipo_nota }}" class="input_cells">
+                    {% endif %}
+                </td>
+                <td><input type="text" value="{{ doc.cnpj_cpf|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" value="{{ doc.nome|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" value="{{ doc.num_doc|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" value="{{ doc.ser }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" value="{{ doc.dt_doc|default_if_none:'' }}" class="input_cells text-center" readonly></td>
+                <td><input type="text" inputmode="decimal" value="{{ doc.vl_doc }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" inputmode="decimal" value="{{ doc.vl_serv }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <!-- Linhas analíticas D590 do documento acima -->
+            {% for item in doc.d590s %}
+            <tr class="vd-row-d190" data-d590-id="{{ item.d590_id }}" data-nome="{{ doc.nome|default_if_none:'' }}">
+                <td class='text-center'><strong><span class="vd-badge vd-badge-done">{{ item.reg|default:"D590" }}</span></strong></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td><input type="text" value="{{ item.cfop }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" value="{{ item.cst_icms }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" inputmode="decimal" value="{{ item.aliq_icms }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" inputmode="decimal" value="{{ item.vl_opr }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" inputmode="decimal" value="{{ item.vl_bc_icms }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" inputmode="decimal" value="{{ item.vl_icms }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" inputmode="decimal" value="{{ item.vl_bc_icms_st }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" inputmode="decimal" value="{{ item.vl_icms_st }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" inputmode="decimal" value="{{ item.vl_red_bc }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" value="{{ item.cod_obs }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+            </tr>
+            {% endfor %}
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="vd-table-footer">
+      <span>
+        Exibindo {{ dados_comunicacao.start_index }} a {{ dados_comunicacao.end_index }} de {{ dados_comunicacao.paginator.count }} documentos (D500)
+      </span>
+      <div class="vd-pagination-wrap">
+        <div class="vd-page-btns">
+          {% if prev_page_url_comunicacao %}
+          <a class="vd-page-btn" href="{{ prev_page_url_comunicacao }}#tab-comunicacao"><i class="bi bi-chevron-left"></i></a>
+          {% else %}
+          <span class="vd-page-btn disabled"><i class="bi bi-chevron-left"></i></span>
+          {% endif %}
+
+          {% for page in page_urls_comunicacao %}
+            {% if page.is_current %}
+            <span class="vd-page-btn active">{{ page.number }}</span>
+            {% elif page.number == 1 or page.number == dados_comunicacao.paginator.num_pages or page.number >= dados_comunicacao.number|add:"-2" and page.number <= dados_comunicacao.number|add:"2" %}
+            <a class="vd-page-btn" href="{{ page.url }}#tab-comunicacao">{{ page.number }}</a>
+            {% elif page.number == dados_comunicacao.number|add:"-3" or page.number == dados_comunicacao.number|add:"3" %}
+            <span class="vd-page-btn disabled">…</span>
+            {% endif %}
+          {% endfor %}
+
+          {% if next_page_url_comunicacao %}
+          <a class="vd-page-btn" href="{{ next_page_url_comunicacao }}#tab-comunicacao"><i class="bi bi-chevron-right"></i></a>
+          {% else %}
+          <span class="vd-page-btn disabled"><i class="bi bi-chevron-right"></i></span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="vd-tab-empty">
+    <i class="bi bi-telephone"></i>
+    <p>Nenhum registro de <strong>Comunicação</strong> para este período.</p>
+  </div>
+  {% endif %}
+
+  </div><!-- /Aba 3: Comunicação -->
+
+  </div><!-- /tab-content -->
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{% static 'js/view_data_cte.js' %}?v=3.0"></script>
+</body>
+</html>

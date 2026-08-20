@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Produção Própria - K230/K235</title>
+{% load static %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+    body { background-color: #f5f6fa; color: #1c1c1e; font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif; }
+    .analysis-header { background: transparent; color: #000; padding: 0.85rem 1.1rem; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+    .analysis-header h4 { margin: 0; font-size: 1.1rem; font-weight: 700; color: #000; display: flex; align-items: center; gap: 0.5rem; }
+    .voltar-btn { color: #000; font-size: 1.5rem; text-decoration: none; transition: transform 0.2s ease; display: inline-flex; align-items: center; font-weight: bold; }
+    .voltar-btn:hover { color: #000; transform: translateX(-4px); }
+    .btn-save { background: #000; border: 1px solid #000; color: #fff; padding: 0.5rem 1.2rem; border-radius: 8px; font-weight: 600; font-size: 0.9rem; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 0.4rem; }
+    .btn-save:hover { background: #333; border-color: #333; color: #fff; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); }
+    .table-container { background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); overflow: hidden; }
+    .table-wrapper { max-height: 500px; overflow-y: auto; overflow-x: auto; }
+    .table { margin-bottom: 0; font-size: 0.9rem; table-layout: auto; width: 100%; }
+    .table thead { background: #f8f9fa; position: sticky; top: 0; z-index: 10; }
+    .table thead th { border: 1px solid #dee2e6; padding: 0.5rem; font-weight: 600; color: #000; text-transform: uppercase; font-size: 0.7rem; }
+    .filter-input { width: 100%; padding: 0.3rem 0.5rem; border: 1px solid #ced4da; border-radius: 6px; font-size: 0.75rem; margin-top: 0.4rem; }
+    .input_cells { width: 100%; padding: 0.35rem 0.4rem; border: 1px solid #dee2e6; border-radius: 6px; font-size: 0.8rem; text-align: center; height: 32px; box-sizing: border-box; }
+    .pagination-wrapper { background: #fff; padding: 0.75rem; border-top: 1px solid #dee2e6; }
+    .page-link { color: #000; border: 1px solid #dee2e6; padding: 0.4rem 0.8rem; border-radius: 6px; margin: 0 0.2rem; }
+    .page-link:hover { background: #000; color: #fff; border-color: #000; }
+    .k230-row { background-color: #e8f4f8 !important; font-weight: 600; border-left: 4px solid #007bff; }
+    .k235-row { background-color: #f8f9fa !important; border-left: 4px solid #6c757d; }
+    .btn-limpar { background: white; border-color: black; color: black; }
+    .btn-limpar:hover { background: #6c757d; color: white; }
+    .btn-salvar { background: white; border: 2px solid black; color: black; padding: 0.5rem 1.2rem; font-weight: 600; border-radius: 8px; }
+    .btn-salvar:hover { color: #007bff; background: #f0f7ff; }
+    .btn-finalizar { background: white; border: 2px solid black; color: black; padding: 0.5rem 1.2rem; font-weight: 600; border-radius: 8px; }
+    .btn-finalizar:hover { color: #28a745; background: #f0fff5; }
+    .link-terceiros { margin-left: 1rem; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+<div class="container my-3" style="max-width: 1400px;">
+    <div class="table-container">
+        <div class="analysis-header">
+            <h4>
+                <a href="{% url 'analise_bloco_k23x' %}" class="voltar-btn"><i class="bi bi-arrow-left-circle-fill"></i></a>
+                <span>Produção Própria (K230/K235)</span>
+                <a href="{% url 'view_producao_k250_k255' %}" class="link-terceiros btn btn-outline-secondary btn-sm">Ver Industrialização Terceiros (K250/K255)</a>
+            </h4>
+            <div style="display: flex; gap: 0.5rem;">
+                <button type="button" onclick="limparTodosFiltros()" class="btn-save btn-limpar"><i class="bi bi-x-circle"></i> Limpar Filtros</button>
+                <button type="button" onclick="salvarAlteracoes('producao_propria')" class="btn-save btn-salvar"><i class="bi bi-save"></i> Salvar</button>
+                <button type="button" onclick="exportarDados('producao_propria')" class="btn-save btn-limpar"><i class="bi bi-file-earmark-excel"></i> Exportar</button>
+            </div>
+        </div>
+        <div class="table-wrapper">
+            <table class="table table-hover align-middle table-bordered text-center" id="table-producao-propria">
+                <thead>
+                    <tr>
+                        <th><span class="header-title">Bloco</span><input type="text" name="f0" class="filter-input" placeholder="Filtrar" value="{{ filters.bloco|default:'' }}"></th>
+                        <th><span class="header-title">Data Inicial</span><input type="date" name="f1" class="filter-input" value="{{ filters.data_inicial_op|default:'' }}"></th>
+                        <th><span class="header-title">Data Final</span><input type="date" name="f2" class="filter-input" value="{{ filters.data_final_op|default:'' }}"></th>
+                        <th><span class="header-title">Cód. Ordem</span><input type="text" name="f3" class="filter-input" value="{{ filters.cod_ordem_prod|default:'' }}"></th>
+                        <th><span class="header-title">Código Item</span><input type="text" name="f4" class="filter-input" value="{{ filters.codigo_item|default:'' }}"></th>
+                        <th><span class="header-title">Qtd Produção</span><input type="text" name="f5" class="filter-input" value="{{ filters.qtd_producao_acabada|default:'' }}"></th>
+                        <th><span class="header-title">Mês Ref.</span><input type="text" name="f6" class="filter-input" value="{{ filters.mes_referencia_k230|default:'' }}"></th>
+                        <th><span class="header-title">Ano SPED</span><input type="text" name="f10" class="filter-input" value="{{ filters.ano_sped|default:'' }}"></th>
+                        <th><span class="header-title">Data Saída</span><input type="date" name="f7" class="filter-input" value="{{ filters.data_saida_estoque|default:'' }}"></th>
+                        <th><span class="header-title">Quantidade</span><input type="text" name="f8" class="filter-input" value="{{ filters.quantidade|default:'' }}"></th>
+                        <th><span class="header-title">Cód. Insumo</span><input type="text" name="f9" class="filter-input" value="{{ filters.codigo_insumo|default:'' }}"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if dados_query %}
+                        {% for grupo in dados_query %}
+                            {% for item_produzido in grupo.k230s %}
+                            <tr class="k230-row">
+                                <td><strong>K230</strong></td>
+                                <td><input type="text" value="{% if item_produzido.data_inicial_op %}{{ item_produzido.data_inicial_op|date:'d/m/Y' }}{% endif %}" class="input_cells"></td>
+                                <td><input type="text" value="{% if item_produzido.data_final_op %}{{ item_produzido.data_final_op|date:'d/m/Y' }}{% endif %}" class="input_cells"></td>
+                                <td><input type="text" value="{{ item_produzido.cod_ordem_prod|default:'' }}" class="input_cells"></td>
+                                <td><input type="text" value="{{ item_produzido.codigo_item|default:'' }}" class="input_cells"></td>
+                                <td><input type="text" value="{{ item_produzido.qtd_producao_acabada|default:'' }}" class="input_cells"></td>
+                                <td><input type="text" value="{{ item_produzido.mes_referencia_k230|default:'' }}" class="input_cells"></td>
+                                <td><input type="text" value="{{ item_produzido.ano_sped|default:'' }}" class="input_cells"></td>
+                                <td></td><td></td><td></td>
+                            </tr>
+                            {% endfor %}
+                            {% for insumo in grupo.k235s %}
+                            <tr class="k235-row">
+                                <td>K235</td>
+                                <td></td><td></td><td></td>
+                                <td><input type="text" value="{{ insumo.codigo_insumo|default:'' }}" class="input_cells"></td>
+                                <td></td>
+                                <td><input type="text" value="{{ insumo.mes_referencia_k235|default:'' }}" class="input_cells"></td>
+                                <td><input type="text" value="{{ insumo.ano_sped|default:'' }}" class="input_cells"></td>
+                                <td><input type="text" value="{% if insumo.data_saida_estoque %}{{ insumo.data_saida_estoque|date:'d/m/Y' }}{% endif %}" class="input_cells"></td>
+                                <td><input type="text" value="{{ insumo.quantidade|default:'' }}" class="input_cells"></td>
+                                <td><input type="text" value="{{ insumo.codigo_insumo|default:'' }}" class="input_cells"></td>
+                            </tr>
+                            {% endfor %}
+                        {% endfor %}
+                    {% else %}
+                        <tr><td colspan="11" class="text-center p-5"><i class="bi bi-inbox fs-1 text-muted"></i><h5 class="mt-3">Sem dados para exibir</h5><p class="text-muted">Carregue arquivos SPED (bloco K230/K235) para exibir os dados</p></td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        {% if dados_query and dados_query.paginator.num_pages > 1 %}
+        <div class="pagination-wrapper">
+            <nav aria-label="Paginação">
+                <ul class="pagination justify-content-center mb-0">
+                    {% if dados_query.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ dados_query.previous_page_number }}{% if current_query %}&{{ current_query }}{% endif %}"><i class="bi bi-chevron-left"></i> Anterior</a></li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link"><i class="bi bi-chevron-left"></i> Anterior</span></li>
+                    {% endif %}
+                    <li class="page-item disabled"><span class="page-link">Página <strong>{{ dados_query.number }}</strong> de <strong>{{ dados_query.paginator.num_pages }}</strong></span></li>
+                    {% if dados_query.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ dados_query.next_page_number }}{% if current_query %}&{{ current_query }}{% endif %}">Próxima <i class="bi bi-chevron-right"></i></a></li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">Próxima <i class="bi bi-chevron-right"></i></span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+<div id="data-holder" data-empresa-id="{{ empresa_id|default:'' }}" ></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{% static 'js/view_data.js' %}"></script>
+<script>
+function limparTodosFiltros() {
+    document.querySelectorAll('#table-producao-propria .filter-input').forEach(inp => inp.value = '');
+    if (typeof applyServerFilters === 'function') applyServerFilters();
+}
+</script>
+</body>
+</html>

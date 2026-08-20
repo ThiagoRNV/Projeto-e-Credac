@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/validacao_dados.css' %}">
+<style>
+  .vd-type-tabs {
+    display: flex;
+    gap: 0;
+    max-width: 1600px;
+    margin: 0 auto 1rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .vd-type-tab {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.7rem 1.15rem;
+    font-size: 0.92rem;
+    font-weight: 500;
+    color: #64748b;
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .vd-type-tab:hover { color: #0d6efd; }
+  .vd-type-tab.active {
+    color: #0d6efd;
+    font-weight: 600;
+    border-bottom-color: #0d6efd;
+  }
+  .meses-wrap { display: flex; align-items: center; gap: 0.2rem; flex-wrap: wrap; justify-content: center; }
+  .mes {
+    font-size: 0.68rem;
+    padding: 0.12rem 0.3rem;
+    border-radius: 4px;
+    letter-spacing: 0.02em;
+  }
+  .mes.ok { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+  .mes.nok { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+</style>
+
+<div class="vd-dashboard">
+  {% if messages %}
+  <div class="vd-messages">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show py-2 mb-2" role="alert" style="font-size:0.87rem;">
+      {% if message.tags == 'error' %}<i class="bi bi-x-circle me-2"></i>
+      {% elif message.tags == 'success' %}<i class="bi bi-check-circle me-2"></i>
+      {% elif message.tags == 'warning' %}<i class="bi bi-exclamation-triangle me-2"></i>
+      {% else %}<i class="bi bi-info-circle me-2"></i>{% endif %}
+      {{ message }}
+      <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert" aria-label="Fechar"></button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="vd-type-tabs" role="tablist">
+    <a href="{% url 'analise_bloco_k23x' %}" class="vd-type-tab {% if tipo == 'k23x' %}active{% endif %}" role="tab" aria-selected="{% if tipo == 'k23x' %}true{% else %}false{% endif %}">Produção</a>
+    <a href="{% url 'analise_bloco_k25x' %}" class="vd-type-tab {% if tipo == 'k25x' %}active{% endif %}" role="tab" aria-selected="{% if tipo == 'k25x' %}true{% else %}false{% endif %}">Industrialização</a>
+  </div>
+
+  <div class="vd-layout">
+    <aside class="vd-sidebar">
+      <div class="vd-panel">
+        <h2 class="vd-panel-title">Filtros</h2>
+        <div class="vd-field">
+          <label for="vd-filter-empresa">Empresa</label>
+          <select id="vd-filter-empresa">
+            <option value="">Todos</option>
+            {% for empresa in empresas_filtro %}
+            <option value="{{ empresa.id }}">{{ empresa.razao_social }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="vd-filter-actions">
+          <button type="button" class="vd-btn-primary" id="vd-btn-aplicar">
+            <i class="bi bi-funnel"></i> Aplicar filtros
+          </button>
+          <button type="button" class="vd-btn-outline" id="vd-btn-limpar">
+            <i class="bi bi-arrow-counterclockwise"></i> Limpar filtros
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="vd-main">
+      <div class="vd-main-header">
+        <div class="vd-main-header-left" style="display: flex; align-items: center; gap: 0.5rem;">
+          <div class="vd-main-icon" style="margin-right: 0;">
+            {% if tipo == 'k23x' %}
+            <i class="bi bi-clipboard2-check"></i>
+            {% else %}
+            <i class="bi bi-layers"></i>
+            {% endif %}
+          </div>
+          <div>
+            <h1 class="vd-main-title" style="margin-bottom: 0;">
+              {% if tipo == 'k23x' %}Análise da Produção{% else %}Análise da Industrialização{% endif %}
+            </h1>
+          </div>
+        </div>
+        <br><br>
+        <a href="{% if tipo == 'k23x' %}{% url 'analise_bloco_k23x' %}{% else %}{% url 'analise_bloco_k25x' %}{% endif %}" class="vd-btn-refresh">
+          <i class="bi bi-arrow-clockwise"></i> Atualizar
+        </a>
+      </div>
+
+      <div class="vd-tab-pane active" data-tab="conteudo" role="tabpanel">
+        <div class="vd-table-wrap">
+          {% if dados or analises_concluidas %}
+          <table class="vd-table">
+            <thead>
+              <tr>
+                <th class="text-center">Empresa</th>
+                <th class="text-center">CNPJ</th>
+                {% if tipo == 'k23x' %}
+                <th class="text-center">Ano</th>
+                {% else %}
+                <th class="text-center">Mês</th>
+                <th class="text-center">Ano</th>
+                {% endif %}
+                <th class="text-center">Ações</th>
+              </tr>
+            </thead>
+            <tbody style="font-size: 13px; font-family: Segoe UI, Arial, sans-serif;">
+              {% for item in dados %}
+              <tr data-row data-empresa-id="{{ item.empresa_id }}" data-status="em_andamento" style="font-size: 13px;">
+                <td class="text-center"><span class="vd-empresa-nome" style="font-size: 13px;">{{ item.razao_social|default:"-"|truncatewords:3|cut:" ..." }}</span></td>
+                <td class="text-center"><span class="vd-cnpj" style="font-size: 13px;">{{ item.cnpj|default:"-" }}</span></td>
+                {% if tipo == 'k23x' %}
+                <td class="text-center" style="font-size: 13px;">{{ item.ano_sped }}</td>
+                {% else %}
+                <td class="text-center" style="font-size: 13px;">{{ item.mes_sped }}</td>
+                <td class="text-center" style="font-size: 13px;">{{ item.ano_sped }}</td>
+                {% endif %}
+                <td class="text-center" style="font-size: 13px;">
+                  <div class="vd-acoes d-flex justify-content-center align-items-center gap-2">
+                    {% if tipo == 'k23x' %}
+                    <a href="{% url 'view_producao_k230_k235' %}?empresa_id={{ item.empresa_id }}{% if item.data_inicio %}&data_sped={{ item.data_inicio|date:'Y-m-d' }}{% endif %}"
+                       class="vd-acao-btn vd-acao-continuar" title="Editar">
+                      <i class="bi bi-arrow-right-circle"></i> Continuar
+                    </a>
+                    {% else %}
+                    <a href="{% url 'view_producao_k250_k255' %}?empresa_id={{ item.empresa_id }}{% if item.mes_sped %}&mes_sped={{ item.mes_sped }}{% endif %}"
+                       class="vd-acao-btn vd-acao-continuar" title="Continuar">
+                      <i class="bi bi-arrow-right-circle"></i> Continuar
+                    </a>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            
+            </tbody>
+          </table>
+          {% else %}
+          <div class="vd-empty">
+            <i class="bi bi-inbox"></i>
+            Nenhuma análise em andamento.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="vd-footer">
+        <span id="vd-page-info">Exibindo registros</span>
+        <div class="vd-pagination">
+          <div class="vd-page-size">
+            <span>Linhas por página:</span>
+            <select id="vd-page-size">
+              <option value="10" selected>10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+            </select>
+          </div>
+          <div class="vd-page-btns" id="vd-page-btns"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="{% static 'js/validacao_dados.js' %}"></script>
+{% endblock %}

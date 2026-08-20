@@ -1,0 +1,851 @@
+  {% extends 'base.html' %}
+  {% load static %}
+  {% block content %}
+  <link rel="stylesheet" href="{% static 'css/validacao_dados.css' %}">
+
+  <div class="vd-dashboard">
+    {% if messages %}
+    <div class="vd-messages">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show py-2 mb-2" role="alert" style="font-size:0.87rem;">
+        {% if message.tags == 'error' %}<i class="bi bi-x-circle me-2"></i>
+        {% elif message.tags == 'success' %}<i class="bi bi-check-circle me-2"></i>
+        {% elif message.tags == 'warning' %}<i class="bi bi-exclamation-triangle me-2"></i>
+        {% else %}<i class="bi bi-info-circle me-2"></i>{% endif %}
+        {{ message }}
+        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert" aria-label="Fechar"></button>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="vd-layout">
+      <!-- Sidebar -->
+      <aside class="vd-sidebar">
+        <div class="vd-panel">
+          <h2 class="vd-panel-title">Filtros</h2>
+          <div class="vd-field">
+            <label for="le-filter-razao">Razão Social</label>
+            <input type="text" id="le-filter-razao" placeholder="Buscar por nome...">
+          </div>
+          <div class="vd-field">
+            <label for="le-filter-cnpj">CNPJ</label>
+            <input type="text" id="le-filter-cnpj" placeholder="Buscar CNPJ...">
+          </div>
+          <div class="vd-field">
+            <label for="le-filter-uf">UF</label>
+            <select id="le-filter-uf">
+              <option value="">Todas</option>
+              <option value="AC">AC</option><option value="AL">AL</option><option value="AM">AM</option>
+              <option value="AP">AP</option><option value="BA">BA</option><option value="CE">CE</option>
+              <option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option>
+              <option value="MA">MA</option><option value="MG">MG</option><option value="MS">MS</option>
+              <option value="MT">MT</option><option value="PA">PA</option><option value="PB">PB</option>
+              <option value="PE">PE</option><option value="PI">PI</option><option value="PR">PR</option>
+              <option value="RJ">RJ</option><option value="RN">RN</option><option value="RO">RO</option>
+              <option value="RR">RR</option><option value="RS">RS</option><option value="SC">SC</option>
+              <option value="SE">SE</option><option value="SP">SP</option><option value="TO">TO</option>
+            </select>
+          </div>
+          <div class="vd-field">
+            <label for="le-filter-status">Status</label>
+            <select id="le-filter-status">
+              <option value="">Todos</option>
+              <option value="pendente">Dados pendentes</option>
+              <option value="completa">Cadastro completo</option>
+              {% if request.user.is_staff %}
+              <option value="inativa">Empresa inativa</option>
+              {% endif %}
+            </select>
+          </div>
+          <div class="vd-filter-actions">
+            <button type="button" class="vd-btn-primary" id="le-btn-aplicar">
+              <i class="bi bi-funnel"></i> Aplicar filtros
+            </button>
+            <button type="button" class="vd-btn-outline" id="le-btn-limpar">
+              <i class="bi bi-arrow-counterclockwise"></i> Limpar filtros
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main -->
+      <main class="vd-main">
+        <div class="vd-main-header">
+          <div class="vd-main-header-left">
+            <div class="vd-main-icon"> 
+              <i class="bi bi-building"></i>
+            </div>
+            <div>
+              <h1 class="vd-main-title">Lista de Empresas</h1>
+              <p class="vd-main-meta mb-0">{{ empresas|length }} empresa(s) cadastrada(s)</p>
+            </div>
+          </div>
+          <div class="d-flex gap-2 flex-wrap">
+            <button type="button" class="vd-btn-refresh" data-bs-toggle="modal" data-bs-target="#modalCadastrarEmpresa">
+              <i class="bi bi-plus-circle"></i> Cadastrar Empresa
+            </button>
+          </div>
+        </div>
+
+        <div class="vd-tabs" role="tablist">
+          <button type="button" class="vd-tab active" data-tab="todas" role="tab">
+            Todas em ativa
+            <span class="vd-tab-badge">{{ empresas|length }}</span>
+          </button>
+          <button type="button" class="vd-tab" data-tab="pendentes" role="tab">
+            Dados pendentes
+            <span class="vd-tab-badge">{{ total_pendentes }}</span>
+          </button>
+          <button type="button" class="vd-tab" data-tab="completas" role="tab">
+            Cadastro completo
+            <span class="vd-tab-badge">{{ total_completas }}</span>
+          </button>
+          {% if request.user.is_staff %}
+          <button type="button" class="vd-tab" data-tab="inativas" role="tab">
+            Empresas Inativas
+            <span class="vd-tab-badge">{{ inativas }}</span>
+          </button>
+          {% endif %}
+        </div>
+
+        <!-- Tab: Todas -->
+        <div class="vd-tab-pane active" data-tab="todas" role="tabpanel">
+          <div class="vd-table-wrap">
+            {% if empresas %}
+            <table class="vd-table">
+              <thead>
+                <tr>
+                  <th class='text-center'>Empresa</th>
+                  <th class='text-center'>CNPJ</th>
+                  <th class='text-center'>UF</th>
+                  <th class='text-center'>Status</th>
+                  <th class='text-center'>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for empresa in empresas %}
+                  {% if empresa.status %}
+                  <tr data-row
+                      data-empresa-id="{{ empresa.id }}"
+                      data-status="{% if empresa.id in ids_com_pendencia %}pendente{% else %}completa{% endif %}"
+                      data-uf="{{ empresa.uf|default:'' }}"
+                      data-razao="{{ empresa.razao_social|default:''|lower }}"
+                      data-cnpj="{{ empresa.cnpj|default:''|lower }}">
+                    <td class='text-center'><span class="vd-empresa-nome">{{ empresa.razao_social|default:"-" }}</span></td>
+                    <td class='text-center'><span class="vd-cnpj">{{ empresa.cnpj|default:"-" }}</span></td>
+                    <td class='text-center'>{{ empresa.uf|default:"-" }}</td>
+                    <td class='text-center'>
+                      {% if empresa.id in ids_com_pendencia %}
+                        <span class="vd-badge vd-badge-pend">Dados pendentes</span>
+                      {% else %}
+                        <span class="vd-badge vd-badge-done">Completo</span>
+                      {% endif %}
+                    </td>
+                    <td class='text-center' style="vertical-align: middle;">
+                      <div class="vd-acoes d-flex justify-content-center align-items-center" style="gap: 8px;">
+                        <button type="button" class="vd-acao-btn vd-acao-ver"
+                                data-bs-toggle="modal" data-bs-target="#empresaModal{{ empresa.id }}" title="Editar">
+                          <i class="bi bi-pencil-square"></i> Editar
+                        </button>
+                        <button type="button" class="vd-acao-btn vd-acao-finalizar"
+                                data-bs-toggle="modal" data-bs-target="#modalExcluir{{ empresa.id }}" title="Excluir"
+                                style="color:#dc3545; border-color:#dc3545;">
+                          <i class="bi bi-trash3"></i> Excluir
+                        </button>
+                      </div>
+                    </td>
+     
+                  </tr>
+                  {% endif %}
+                {% endfor %}
+              </tbody>
+            </table>
+            {% else %}
+            <div class="vd-empty">
+              <i class="bi bi-inbox"></i>
+              Nenhuma empresa cadastrada.
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Tab: Dados pendentes -->
+        <div class="vd-tab-pane" data-tab="pendentes" role="tabpanel">
+          <div class="vd-table-wrap">
+            {% if empresas %}
+            <table class="vd-table">
+              <thead>
+                <tr>
+                  <th class='text-center'>Empresa</th>
+                  <th class='text-center'>CNPJ</th>
+                  <th class='text-center'>UF</th>
+                  <th class='text-center'>Status</th>
+                  <th class='text-center'>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for empresa in empresas %}
+                {% if empresa.id in ids_com_pendencia %}
+                <tr data-row
+                    data-empresa-id="{{ empresa.id }}"
+                    data-status="pendente"
+                    data-uf="{{ empresa.uf|default:'' }}"
+                    data-razao="{{ empresa.razao_social|default:''|lower }}"
+                    data-cnpj="{{ empresa.cnpj|default:''|lower }}">
+                  <td class='text-center'><span class="vd-empresa-nome">{{ empresa.razao_social|default:"-" }}</span></td>
+                  <td class='text-center'><span class="vd-cnpj">{{ empresa.cnpj|default:"-" }}</span></td>
+                  <td class='text-center'>{{ empresa.uf|default:"-" }}</td>
+                  <td class='text-center'><span class="vd-badge vd-badge-pend">Dados pendentes</span></td>
+                  <td class='text-center'>
+                    <div class="vd-acoes">
+                      <button type="button" class="vd-acao-btn vd-acao-ver"
+                              data-bs-toggle="modal" data-bs-target="#empresaModal{{ empresa.id }}" title="Editar">
+                        <i class="bi bi-pencil-square"></i> Editar
+                      </button>
+                      <button type="button" class="vd-acao-btn vd-acao-finalizar"
+                              data-bs-toggle="modal" data-bs-target="#modalExcluir{{ empresa.id }}" title="Excluir"
+                              style="color:#dc3545; border-color:#dc3545;">
+                        <i class="bi bi-trash3"></i> Excluir
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+              </tbody>
+            </table>
+            {% else %}
+            <div class="vd-empty">
+              <i class="bi bi-emoji-smile"></i>
+              Nenhuma empresa com dados pendentes.
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Tab: Cadastro completo -->
+        <div class="vd-tab-pane" data-tab="completas" role="tabpanel">
+          <div class="vd-table-wrap">
+            {% if empresas %}
+            <table class="vd-table">
+              <thead>
+                <tr>
+                  <th class='text-center'>Empresa</th>
+                  <th class='text-center'>CNPJ</th>
+                  <th class='text-center'>UF</th>
+                  <th class='text-center'>Status</th>
+                  <th class='text-center'>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for empresa in empresas %}
+                {% if empresa.id not in ids_com_pendencia %}
+                <tr data-row
+                    data-empresa-id="{{ empresa.id }}"
+                    data-status="completa"
+                    data-uf="{{ empresa.uf|default:'' }}"
+                    data-razao="{{ empresa.razao_social|default:''|lower }}"
+                    data-cnpj="{{ empresa.cnpj|default:''|lower }}">
+                  <td class='text-center'><span class="vd-empresa-nome">{{ empresa.razao_social|default:"-" }}</span></td>
+                  <td class='text-center'><span class="vd-cnpj">{{ empresa.cnpj|default:"-" }}</span></td>
+                  <td class='text-center'>{{ empresa.uf|default:"-" }}</td>
+                  <td class='text-center'><span class="vd-badge vd-badge-done">Completo</span></td>
+                  <td class='text-center'>
+                    <div class="vd-acoes">
+                      <button type="button" class="vd-acao-btn vd-acao-ver"
+                              data-bs-toggle="modal" data-bs-target="#empresaModal{{ empresa.id }}" title="Editar">
+                        <i class="bi bi-pencil-square"></i> Editar
+                      </button>
+                      <button type="button" class="vd-acao-btn vd-acao-finalizar"
+                              data-bs-toggle="modal" data-bs-target="#modalExcluir{{ empresa.id }}" title="Excluir"
+                              style="color:#dc3545; border-color:#dc3545;">
+                        <i class="bi bi-trash3"></i> Excluir
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+              </tbody>
+            </table>
+            {% else %}
+            <div class="vd-empty">
+              <i class="bi bi-emoji-smile"></i>
+              Nenhuma empresa com cadastro completo.
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% if request.user.is_staff %}
+         <!-- Tab: Empresas Inativas -->
+        <div class="vd-tab-pane" data-tab="inativas" role="tabpanel">
+          <div class="vd-table-wrap">
+            {% if empresas_inativas %}
+            <table class="vd-table">
+              <thead>
+                <tr>
+                  <th class='text-center'>Empresa</th>
+                  <th class='text-center'>CNPJ</th>
+                  <th class='text-center'>UF</th>
+                  <th class='text-center'>Status</th>
+                  <th class='text-center'>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for empresa in empresas_inativas %}
+                    <tr data-row
+                        data-empresa-id="{{ empresa.id }}"
+                        data-status="inativa"
+                        data-uf="{{ empresa.uf|default:'' }}"
+                        data-razao="{{ empresa.razao_social|default:''|lower }}"
+                        data-cnpj="{{ empresa.cnpj|default:''|lower }}">
+                      <td class='text-center'><span class="vd-empresa-nome">{{ empresa.razao_social|default:"-" }}</span></td>
+                      <td class='text-center'><span class="vd-cnpj">{{ empresa.cnpj|default:"-" }}</span></td>
+                      <td class='text-center'>{{ empresa.uf|default:"-" }}</td>
+                      <td class='text-center'><span class="vd-badge vd-badge-pend">Inativa</span></td>
+                      <td class='text-center'>
+                        <div class="vd-acoes d-flex justify-content-center">
+                          <button type="button"
+                                  class="vd-acao-btn vd-acao-reativar"
+                                  title="Reativar empresa"
+                                  style="background-color: #198754; color: #fff; border: 1px solid #198754; border-radius: 4px; font-weight: 600; box-shadow: 0 2px 5px 0 rgba(25,135,84,.12); transition: background 0.2s;"
+                          >
+                            <i class="bi bi-arrow-repeat" style="margin-right:4px;"></i> Reativar
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% else %}
+            <div class="vd-empty">
+              <i class="bi bi-emoji-smile"></i>
+              Nenhuma empresa inativa.
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+        <div class="vd-footer">
+          <span id="le-page-info">Exibindo registros</span>
+          <div class="vd-pagination">
+            <div class="vd-page-size">
+              <span>Linhas por página:</span>
+              <select id="le-page-size">
+                <option value="10" selected>10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+              </select>
+            </div>
+            <div class="vd-page-btns" id="le-page-btns"></div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Modal: Cadastrar Empresa (Manual / SPED) -->
+  <style>
+    .ce-accordion-item {
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      margin-bottom: 0.75rem;
+      background: #fff;
+      overflow: hidden;
+      transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .ce-accordion-item:last-child { margin-bottom: 0; }
+    .ce-accordion-item.is-open {
+      border-color: #cbd5e1;
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
+    }
+    .ce-accordion-header {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      padding: 0.95rem 1.1rem;
+      background: #fff;
+      border: none;
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .ce-accordion-header:hover { background: #f8fafc; }
+    .ce-accordion-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 1.05rem;
+      color: #fff;
+    }
+    .ce-accordion-icon.manual { background: #0d6efd; }
+    .ce-accordion-icon.sped { background: #0f172a; }
+    .ce-accordion-text { flex: 1; min-width: 0; }
+    .ce-accordion-title {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #1f2937;
+    }
+    .ce-accordion-sub {
+      margin: 0.15rem 0 0;
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+    .ce-accordion-chevron {
+      font-size: 1.1rem;
+      color: #9ca3af;
+      transition: transform 0.25s ease;
+      flex-shrink: 0;
+    }
+    .ce-accordion-header[aria-expanded="true"] .ce-accordion-chevron {
+      transform: rotate(180deg);
+    }
+    .ce-accordion-body {
+      background: #f8fafc;
+      border-top: 1px solid #e5e7eb;
+      padding: 1rem 1.1rem 1.15rem;
+      max-height: 58vh;
+      overflow-y: auto;
+    }
+    .ce-section-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: #6b7280;
+      margin: 0.85rem 0 0.35rem;
+    }
+    .ce-section-label:first-child { margin-top: 0; }
+    .ce-upload-zone {
+      border: 1.5px dashed #cbd5e1;
+      border-radius: 10px;
+      padding: 1.25rem 1rem;
+      text-align: center;
+      background: #fff;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .ce-upload-zone:hover,
+    .ce-upload-zone.dragover {
+      border-color: #0d6efd;
+      background: #eff6ff;
+    }
+    .ce-upload-zone i { font-size: 1.75rem; color: #64748b; }
+    .ce-upload-zone p { margin: 0.4rem 0 0; font-size: 0.85rem; color: #64748b; }
+    .ce-file-name {
+      margin-top: 0.65rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #0f172a;
+    }
+  </style>
+
+  <div class="modal fade" id="modalCadastrarEmpresa" tabindex="-1" aria-labelledby="modalCadastrarEmpresaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content" style="border-radius: 12px;">
+        <div class="modal-header bg-dark text-white">
+          <h5 class="modal-title w-100 text-center" id="modalCadastrarEmpresaLabel">
+            <i class="bi bi-building-add me-2"></i>Cadastrar Empresa
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body" style="padding: 1.15rem;">
+          <p class="text-muted text-center mb-3" style="font-size: 0.88rem;">
+            Escolha como deseja cadastrar a empresa
+          </p>
+
+          <div class="ce-accordion" id="ceAccordion">
+            <!-- Opção 1: Manual -->
+            <div class="ce-accordion-item" data-ce-item>
+              <button type="button" class="ce-accordion-header"
+                      data-bs-toggle="collapse" data-bs-target="#cePanelManual"
+                      aria-expanded="false" aria-controls="cePanelManual">
+                <span class="ce-accordion-icon manual"><i class="bi bi-pencil-square"></i></span>
+                <span class="ce-accordion-text">
+                  <p class="ce-accordion-title">Cadastrar manualmente</p>
+                  <p class="ce-accordion-sub">Preencha os dados da empresa no formulário</p>
+                </span>
+                <i class="bi bi-chevron-down ce-accordion-chevron"></i>
+              </button>
+              <div id="cePanelManual" class="collapse" data-bs-parent="#ceAccordion">
+                <div class="ce-accordion-body">
+                  <form method="post" action="{% url 'cadastrar_manualmente' %}">
+                    {% csrf_token %}
+
+                    <p class="ce-section-label"><i class="bi bi-building me-1"></i> Identificação</p>
+                    <hr class="mt-0 mb-3">
+                    <div class="row g-3">
+                      <div class="col-md-6">
+                        <label class="form-label fw-semibold">Razão Social <span class="text-danger">*</span></label>
+                        <input type="text" name="razao_social" class="form-control" required maxlength="70" placeholder="Digite a razão social">
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label fw-semibold">Nome Fantasia</label>
+                        <input type="text" name="nome_fantasia" class="form-control" maxlength="70" placeholder="Nome fantasia">
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label fw-semibold">CNPJ <span class="text-danger">*</span></label>
+                        <input type="text" name="cnpj" class="form-control" required maxlength="18" placeholder="00.000.000/0001-00">
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label fw-semibold">CNAE</label>
+                        <input type="text" name="cnae" class="form-control" maxlength="50" placeholder="0000-0/00">
+                      </div>
+                      <div class="col-md-2">
+                        <label class="form-label fw-semibold">LADCA</label>
+                        <input type="text" name="ladca" class="form-control" maxlength="4" placeholder="0001">
+                      </div>
+                      <div class="col-md-2">
+                        <label class="form-label fw-semibold">UF <span class="text-danger">*</span></label>
+                        <select name="uf" class="form-select" required>
+                          <option value="" selected disabled>--</option>
+                          <option value="AC">AC</option><option value="AL">AL</option><option value="AM">AM</option>
+                          <option value="AP">AP</option><option value="BA">BA</option><option value="CE">CE</option>
+                          <option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option>
+                          <option value="MA">MA</option><option value="MG">MG</option><option value="MS">MS</option>
+                          <option value="MT">MT</option><option value="PA">PA</option><option value="PB">PB</option>
+                          <option value="PE">PE</option><option value="PI">PI</option><option value="PR">PR</option>
+                          <option value="RJ">RJ</option><option value="RN">RN</option><option value="RO">RO</option>
+                          <option value="RR">RR</option><option value="RS">RS</option><option value="SC">SC</option>
+                          <option value="SE">SE</option><option value="SP">SP</option><option value="TO">TO</option>
+                        </select>
+                      </div>
+                      <div class="col-md-5">
+                        <label class="form-label fw-semibold">E-mail</label>
+                        <input type="email" name="email" class="form-control" placeholder="empresa@email.com">
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label fw-semibold">Inscrição Estadual <span class="text-danger">*</span></label>
+                        <input type="text" name="inscricao_estadual" class="form-control" required maxlength="20">
+                      </div>
+                      <div class="col-md-3">
+                        <label class="form-label fw-semibold">Insc. Estadual Íntima</label>
+                        <input type="text" name="inscricao_estadual_intima" class="form-control" maxlength="20">
+                      </div>
+                    </div>
+
+                    <p class="ce-section-label"><i class="bi bi-sliders me-1"></i> Configuração SPED</p>
+                    <hr class="mt-0 mb-3">
+                    <div class="row g-3">
+                      <div class="col-md-4">
+                        <label class="form-label fw-semibold">Indicador de Atividade <span class="text-danger">*</span></label>
+                        <select name="indicador_atividade" class="form-select" required>
+                          <option value="" selected disabled>Selecione</option>
+                          <option value="0 - Comercial">0 - Comercial</option>
+                          <option value="1 - Indústria">1 - Indústria</option>
+                          <option value="2 - Indústria e Comercial">2 - Indústria e Comercial</option>
+                        </select>
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label fw-semibold">Indicador de Movimento</label>
+                        <select name="indicador_movimento" class="form-select">
+                          <option value="" selected disabled>Selecione</option>
+                          <option value="0">0 - Sem Movimento</option>
+                          <option value="1">1 - Com Movimento</option>
+                        </select>
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label fw-semibold">Configuração <span class="text-danger">*</span></label>
+                        <select name="configuracao" class="form-select" required>
+                          <option value="" selected disabled>Selecione</option>
+                          <option value="Fiscal">Fiscal</option>
+                          <option value="Contábil">Contábil</option>
+                        </select>
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label fw-semibold">Opção de Crédito Outorgado</label>
+                        <input type="text" name="opc_cred_outorgado" class="form-control" maxlength="20">
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label fw-semibold">Código de Verificação</label>
+                        <input type="text" name="cod_ver" class="form-control" maxlength="18">
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label fw-semibold">Código Financeiro</label>
+                        <input type="text" name="cod_fin" class="form-control" maxlength="18">
+                      </div>
+                    </div>
+
+                    <p class="ce-section-label"><i class="bi bi-geo-alt me-1"></i> Endereço e Contato</p>
+                    <hr class="mt-0 mb-3">
+                    <div class="row g-3">
+                      <div class="col-md-3">
+                        <label class="form-label fw-semibold">CEP <span class="text-danger">*</span></label>
+                        <input type="text" name="cep" class="form-control" required maxlength="10" placeholder="00000-000">
+                      </div>
+                      <div class="col-md-3">
+                        <label class="form-label fw-semibold">Código Município <span class="text-danger">*</span></label>
+                        <input type="text" name="codigo_municipio" class="form-control" required>
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label fw-semibold">Bairro <span class="text-danger">*</span></label>
+                        <input type="text" name="bairro" class="form-control" required maxlength="50">
+                      </div>
+                      <div class="col-md-2">
+                        <label class="form-label fw-semibold">Número <span class="text-danger">*</span></label>
+                        <input type="text" name="numero_endereco" class="form-control" required maxlength="10">
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label fw-semibold">Endereço <span class="text-danger">*</span></label>
+                        <input type="text" name="endereco" class="form-control" required maxlength="100">
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label fw-semibold">Complemento</label>
+                        <input type="text" name="complemento" class="form-control" maxlength="50">
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label fw-semibold">Telefone <span class="text-danger">*</span></label>
+                        <input type="text" name="telefone" class="form-control" required maxlength="20" placeholder="(XX) 9XXXX-XXXX">
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label fw-semibold">Método de Rateio <span class="text-danger">*</span></label>
+                        <select name="metodo_rateio" class="form-select" required>
+                          <option value="" selected disabled>Selecione</option>
+                          <option value="Direto">Direto</option>
+                          <option value="Indireto">Indireto</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end mt-3">
+                      <button type="submit" class="btn btn-outline-dark px-4 rounded-3 shadow-sm">
+                        <i class="bi bi-save me-1"></i> Salvar Empresa
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <!-- Opção 2: Via SPED -->
+            <div class="ce-accordion-item" data-ce-item>
+              <button type="button" class="ce-accordion-header"
+                      data-bs-toggle="collapse" data-bs-target="#cePanelSped"
+                      aria-expanded="false" aria-controls="cePanelSped">
+                <span class="ce-accordion-icon sped"><i class="bi bi-filetype-txt"></i></span>
+                <span class="ce-accordion-text">
+                  <p class="ce-accordion-title">Cadastrar via SPED</p>
+                  <p class="ce-accordion-sub">Importe os dados a partir de um arquivo .txt</p>
+                </span>
+                <i class="bi bi-chevron-down ce-accordion-chevron"></i>
+              </button>
+              <div id="cePanelSped" class="collapse" data-bs-parent="#ceAccordion">
+                <div class="ce-accordion-body">
+                  <form method="POST" enctype="multipart/form-data" action="{% url 'cadastrar_via_sped' %}" id="ceFormSped">
+                    {% csrf_token %}
+                    <label class="ce-upload-zone" for="ce_sped_empresa" id="ceSpedZone">
+                      <i class="bi bi-cloud-arrow-up"></i>
+                      <p>Clique ou arraste o arquivo SPED (.txt)</p>
+                      <div class="ce-file-name d-none" id="ceSpedFileName"></div>
+                    </label>
+                    <input type="file" name="sped_empresa" id="ce_sped_empresa" accept=".txt" class="d-none" required>
+                    <div class="d-flex justify-content-end mt-3">
+                      <button type="submit" class="btn btn-outline-dark px-4 rounded-3 shadow-sm">
+                        <i class="bi bi-building-add me-1"></i> Cadastrar Empresa
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modais -->
+  {% for empresa in empresas %}
+  <div class="modal fade" id="empresaModal{{ empresa.id }}" tabindex="-1" aria-labelledby="empresaModalLabel{{ empresa.id }}" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-scrollable">
+          <div class="modal-content" style="height: 500px; overflow-y: auto; MARGIN-TOP: 100px; border-radius: 10px;">
+              <div class="modal-header bg-dark text-white">
+                  <h5 class="modal-title text-center w-100" id="empresaModalLabel{{ empresa.id }}">
+                      {{ empresa.razao_social }}
+                  </h5>
+                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+              </div>
+              <form method="POST" action="{% url 'editar_empresa' empresa.id %}">
+                  {% csrf_token %}
+                  <div class="modal-body">
+                      <div class="row g-3 justify-content-center">
+                          <div class="col-md-6">
+                              <label class="form-label fw-semibold">Razão Social:</label>
+                              <input type="text" name="razao_social" class="form-control" maxlength="255" value="{{ empresa.razao_social|default:'' }}">
+                          </div>
+                          <div class="col-md-6">
+                            <label class="form-label fw-semibold">E-mail corporativo:</label>
+                            <input type="text" name="email" class="form-control" maxlength="255" value="{{ empresa.email|default:'' }}">
+                          </div>
+                          <div class="col-md-6">
+                              <label class="form-label fw-semibold">CNPJ:</label>
+                              <input type="text" name="cnpj" class="form-control" maxlength="18" value="{{ empresa.cnpj|default:'' }}">
+                          </div>
+                          <div class="col-md-6">
+                              <label class="form-label fw-semibold">CNAE:</label>
+                              <input type="text" name="cnae" class="form-control" maxlength="50" value="{{ empresa.cnae|default:'' }}">
+                          </div>
+                          <div class="col-md-6">
+                              <label class="form-label fw-semibold">Inscrição Estadual:</label>
+                              <input type="text" name="inscricao_estadual" class="form-control" maxlength="20" value="{{ empresa.inscricao_estadual|default:'' }}">
+                          </div>
+                          <div class="col-md-6">
+                              <label class="form-label fw-semibold">LADCA:</label>
+                              <input type="text" name="ladca" class="form-control" value="{{ empresa.ladca|default:''}}">
+                          </div>
+                          <div class="col-md-6">
+                              <label class="form-label fw-semibold">Código de Verificação:</label>
+                              <input type="text" name="cod_ver" class="form-control" value="{{ empresa.cod_ver|default:'' }}">
+                          </div>
+                          <div class="col-md-6">
+                              <label class="form-label fw-semibold">Código Finalidade (cod_fin):</label>
+                              <input type="text" name="cod_fin" class="form-control" value="{{ empresa.cod_fin|default:'' }}">
+                          </div>
+                          <div class="col-md-6">
+                              <label class="form-label fw-semibold">Opção Crédito Outorgado:</label>
+                              <input type="text" name="opc_cred_outorgado" class="form-control" value="{{ empresa.opc_cred_outorgado|default:'' }}">
+                          </div>
+                          <div class="col-md-6">
+                              <label class="form-label fw-semibold">Inscrição Estadual Intima:</label>
+                              <input type="text" name="inscricao_estadual_intima" class="form-control" value="{{ empresa.inscricao_estadual_intima|default:'' }}">
+                          </div>
+                          <div class="col-md-6">
+                              <label class="form-label fw-semibold">UF:</label>
+                              <select name="uf" class="form-select">
+                                  <option value="">Selecione uma opção</option>
+                                  <option value="SP" {% if empresa.uf == "SP" %}selected{% endif %}>SP</option>
+                                  <option value="RJ" {% if empresa.uf == "RJ" %}selected{% endif %}>RJ</option>
+                                  <option value="MG" {% if empresa.uf == "MG" %}selected{% endif %}>MG</option>
+                                  <option value="RS" {% if empresa.uf == "RS" %}selected{% endif %}>RS</option>
+                                  <option value="PR" {% if empresa.uf == "PR" %}selected{% endif %}>PR</option>
+                                  <option value="BA" {% if empresa.uf == "BA" %}selected{% endif %}>BA</option>
+                                  <option value="PE" {% if empresa.uf == "PE" %}selected{% endif %}>PE</option>
+                                  <option value="CE" {% if empresa.uf == "CE" %}selected{% endif %}>CE</option>
+                                  <option value="GO" {% if empresa.uf == "GO" %}selected{% endif %}>GO</option>
+                                  <option value="DF" {% if empresa.uf == "DF" %}selected{% endif %}>DF</option>
+                                  <option value="ES" {% if empresa.uf == "ES" %}selected{% endif %}>ES</option>
+                                  <option value="SC" {% if empresa.uf == "SC" %}selected{% endif %}>SC</option>
+                                  <option value="MT" {% if empresa.uf == "MT" %}selected{% endif %}>MT</option>
+                                  <option value="MS" {% if empresa.uf == "MS" %}selected{% endif %}>MS</option>
+                                  <option value="AL" {% if empresa.uf == "AL" %}selected{% endif %}>AL</option>
+                                  <option value="AM" {% if empresa.uf == "AM" %}selected{% endif %}>AM</option>
+                                  <option value="AP" {% if empresa.uf == "AP" %}selected{% endif %}>AP</option>
+                                  <option value="MA" {% if empresa.uf == "MA" %}selected{% endif %}>MA</option>
+                                  <option value="PA" {% if empresa.uf == "PA" %}selected{% endif %}>PA</option>
+                                  <option value="PB" {% if empresa.uf == "PB" %}selected{% endif %}>PB</option>
+                                  <option value="PI" {% if empresa.uf == "PI" %}selected{% endif %}>PI</option>
+                                  <option value="RN" {% if empresa.uf == "RN" %}selected{% endif %}>RN</option>
+                                  <option value="SE" {% if empresa.uf == "SE" %}selected{% endif %}>SE</option>
+                                  <option value="TO" {% if empresa.uf == "TO" %}selected{% endif %}>TO</option>
+                                  <option value="RO" {% if empresa.uf == "RO" %}selected{% endif %}>RO</option>
+                                  <option value="RR" {% if empresa.uf == "RR" %}selected{% endif %}>RR</option>
+                                  <option value="AC" {% if empresa.uf == "AC" %}selected{% endif %}>AC</option>
+                              </select>
+                          </div>
+                          <div class="col-md-6">
+                              <label class="form-label fw-semibold">Indicador de Atividade:</label>
+                              <select name="indicador_atividade" class="form-select">
+                                  <option value="" {% if not empresa.indicador_atividade %}selected{% endif %} disabled>Selecione uma opção</option>
+                                  <option value="0"{% if empresa.indicador_atividade == '0' %}selected{% endif %}>Indústria</option>
+                                  <option value="1"{% if empresa.indicador_atividade == '1' %}selected{% endif %}>Outros</option>
+                              </select>
+                          </div>
+                          <div class="col-md-6">
+                            <label class="form-label fw-semibold">Indicador do movimento:</label>
+                            <select name="indicador_movimento" class="form-select">
+                                <option value="" {% if not empresa.indicador_movimento %}selected{% endif %} disabled>Selecione uma opção</option>
+                                <option value="0"{% if empresa.indicador_movimento == '0' %}selected{% endif %}>0 - Com movimento</option>
+                                <option value="1"{% if empresa.indicador_movimento == '1' %}selected{% endif %}>1 - Sem movimento</option>
+                            </select>
+                        </div>
+                          <div class="col-md-6">
+                              <label class="form-label fw-semibold">Configuração:</label>
+                              <select name="configuracao" class="form-select">
+                                <option value="" {% if not empresa.configuracao %}selected{% endif %} disabled>Selecionar configuração</option>
+                                  <option value="Fiscal" {% if empresa.configuracao == "Fiscal" %}selected{% endif %}>Fiscal</option>
+                                  <option value="Contábil" {% if empresa.configuracao == "Contábil" %}selected{% endif %}>Contábil</option>
+                              </select>
+                          </div>
+                          <div class="col-md-6">
+                              <label class="form-label fw-semibold">Código Município:</label>
+                              <input type="text" name="codigo_municipio" class="form-control" value="{{ empresa.codigo_municipio|default:'' }}">
+                          </div>
+                          <div class="col-md-6">
+                              <label class="form-label fw-semibold">Nome Fantasia:</label>
+                              <input type="text" name="nome_fantasia" class="form-control" value="{{ empresa.nome_fantasia|default:'' }}">
+                          </div>
+                          <div class="col-md-6">
+                              <label class="form-label fw-semibold">CEP:</label>
+                              <input type="text" name="cep" class="form-control" value="{{ empresa.cep|default:'' }}">
+                          </div>
+                          <div class="col-md-6">
+                              <label class="form-label fw-semibold">Endereço:</label>
+                              <input type="text" name="endereco" class="form-control" value="{{ empresa.endereco|default:'' }}">
+                          </div>
+                          <div class="col-md-4">
+                              <label class="form-label fw-semibold">Número:</label>
+                              <input type="text" name="numero_endereco" class="form-control" value="{{ empresa.numero_endereco|default:'' }}">
+                          </div>
+                          <div class="col-md-4">
+                              <label class="form-label fw-semibold">Complemento:</label>
+                              <input type="text" name="complemento" class="form-control" value="{{ empresa.complemento|default:'' }}">
+                          </div>
+                          <div class="col-md-4">
+                              <label class="form-label fw-semibold">Bairro:</label>
+                              <input type="text" name="bairro" class="form-control" value="{{ empresa.bairro|default:'' }}">
+                          </div>
+                          <div class="col-md-6 mt-3">
+                              <label class="form-label fw-semibold">Telefone:</label>
+                              <input type="text" name="telefone" class="form-control" value="{{ empresa.telefone|default:'' }}">
+                          </div>
+                          <div class="col-md-6 mt-3">
+                              <label class="form-label fw-semibold">Método de Rateio:</label>
+                              <select name="metodo_rateio" class="form-select">
+                                  <option value="" {% if not empresa.metodo_rateio %}selected{% endif %} disabled>Selecionar método</option>
+                                  <option value="Direto" {% if empresa.metodo_rateio == "Direto" %}selected{% endif %}>Direto</option>
+                                  <option value="Indireto" {% if empresa.metodo_rateio == "Indireto" %}selected{% endif %}>Indireto</option>
+                              </select>
+                          </div>
+                      </div>
+                  </div>
+                  <div class="modal-footer d-flex justify-content-center">
+                      <button type="submit" class="btn btn-warning">Salvar Alterações</button>
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                  </div>
+              </form>
+          </div>
+      </div>
+  </div>
+
+  <div class="modal fade" id="modalExcluir{{ empresa.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title text-center w-100">Excluir Empresa</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body text-center">
+          Tem certeza que deseja excluir a empresa <strong>{{ empresa.razao_social }}</strong>?
+        </div>
+        <div class="modal-footer d-flex justify-content-center">
+          <form method="post" action="{% url 'excluir_empresa' empresa.id %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
+          </form>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+  <script src="{% static 'js/listagem_empresas.js' %}?v=3"></script>
+  {% endblock %}

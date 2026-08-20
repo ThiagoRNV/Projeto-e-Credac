@@ -1,0 +1,251 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/validacao_dados.css' %}">
+
+<div class="vd-dashboard" data-modulo="nfe">
+  {% if messages %}
+  <div class="vd-messages">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show py-2 mb-2" role="alert" style="font-size:0.87rem;">
+      {% if message.tags == 'error' %}<i class="bi bi-x-circle me-2"></i>
+      {% elif message.tags == 'success' %}<i class="bi bi-check-circle me-2"></i>
+      {% elif message.tags == 'warning' %}<i class="bi bi-exclamation-triangle me-2"></i>
+      {% else %}<i class="bi bi-info-circle me-2"></i>{% endif %}
+      {{ message }}
+      <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert" aria-label="Fechar"></button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="vd-layout">
+    <!-- Sidebar -->
+    <aside class="vd-sidebar">
+      <div class="vd-panel">
+        <h2 class="vd-panel-title">Filtros</h2>
+        <div class="vd-field">
+          <label for="vd-filter-empresa">Empresa</label>
+          <select id="vd-filter-empresa">
+            <option value="">Todos</option>
+            {% for empresa in empresas_filtro %}
+            <option value="{{ empresa.id }}">{{ empresa.razao_social }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="vd-field">
+          <label for="vd-filter-status">Status</label>
+          <select id="vd-filter-status">
+            <option value="">Todos</option>
+            <option value="em_andamento">Em andamento</option>
+            <option value="concluido">Concluídas</option>
+          </select>
+        </div>
+        <div class="vd-field">
+          <label>Período</label>
+          <div class="vd-periodo">
+            <input type="date" id="vd-filter-data-inicio" aria-label="Data inicial">
+            <span class="vd-periodo-sep">–</span>
+            <input type="date" id="vd-filter-data-fim" aria-label="Data final">
+          </div>
+        </div>
+        <div class="vd-filter-actions">
+          <button type="button" class="vd-btn-primary" id="vd-btn-aplicar">
+            <i class="bi bi-funnel"></i> Aplicar filtros
+          </button>
+          <button type="button" class="vd-btn-outline" id="vd-btn-limpar">
+            <i class="bi bi-arrow-counterclockwise"></i> Limpar filtros
+          </button>
+        </div>
+      </div>
+
+      <div class="vd-panel">
+        <h2 class="vd-panel-title">Resumo</h2>
+        <ul class="vd-resumo-list">
+          <li class="vd-resumo-item">
+            <span class="vd-resumo-left">
+              <i class="bi bi-hourglass-split vd-resumo-icon wip"></i>
+              Em andamento
+            </span>
+            <span class="vd-resumo-count" id="vd-count-andamento">{{ empresas|length }}</span>
+          </li>
+          <li class="vd-resumo-item">
+            <span class="vd-resumo-left">
+              <i class="bi bi-check-circle-fill vd-resumo-icon done"></i>
+              Concluídas
+            </span>
+            <span class="vd-resumo-count" id="vd-count-concluidas">{{ empresas_concluidas|length }}</span>
+          </li>
+          <li class="vd-resumo-item vd-resumo-total">
+            <span>Total</span>
+            <span class="vd-resumo-count">{{ total_movimentacoes }}</span>
+          </li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="vd-main">
+      <div class="vd-main-header">
+        <div class="vd-main-header-left">
+          <div class="vd-main-icon">
+            <i class="bi bi-clipboard2-check"></i>
+          </div>
+          <div>
+            <h1 class="vd-main-title">NF-es em andamento</h1>
+            <p class="vd-main-meta mb-0">Painel de validação de mercadorias</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="vd-tabs" role="tablist">
+        <button type="button" class="vd-tab active" data-tab="andamento" role="tab">
+          Em andamento
+          <span class="vd-tab-badge">{{ empresas|length }}</span>
+        </button>
+        <button type="button" class="vd-tab" data-tab="concluidas" role="tab">
+          Concluídas
+          <span class="vd-tab-badge">{{ empresas_concluidas|length }}</span>
+        </button>
+      </div>
+
+      <!-- Tab: Em andamento -->
+      <div class="vd-tab-pane active" data-tab="andamento" role="tabpanel">
+        <div class="vd-table-wrap">
+          {% if empresas %}
+          <table class="vd-table">
+            <thead>
+              <tr>
+                <th class='text-center'>Empresa</th>
+                <th class='text-center'>CNPJ</th>
+                <th class='text-center'>Data Inicial</th>
+                <th class='text-center'>Data Final</th>
+                <th class='text-center'>Status</th>
+                <th class='text-center'>Arquivos</th>
+                <th class='text-center'>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for empresa in empresas %}
+              <tr data-row
+                  data-empresa-id="{{ empresa.empresa_id }}"
+                  data-status="em_andamento"
+                  data-data-sped="{{ empresa.data_sped|date:'Y-m-d' }}">
+                <td class='text-center'><span class="vd-empresa-nome">{{ empresa.razao_social|default:"-"|truncatewords:3|cut:" ..."  }}</span></td>
+                <td class='text-center'><span class="vd-cnpj">{{ empresa.cnpj }}</span></td>
+                <td class='text-center'>{{ empresa.data_inicial|date:"d/m/Y"|default:"-" }}</td>
+                <td class='text-center'>{{ empresa.data_final|date:"d/m/Y"|default:"-" }}</td>
+                <td class='text-center'><span class="vd-badge vd-badge-wip">Em andamento</span></td>
+                <td class='text-center align-middle'>
+                  <div class="vd-arquivos d-flex justify-content-center align-items-center gap-2">
+                    <span class="vd-arquivo {% if empresa.sped == '🟢' %}ok{% else %}no{% endif %}" title="SPED"><i class="bi bi-filetype-txt"></i></span>
+                    <span class="vd-arquivo {% if empresa.xml == '🟢' %}ok{% else %}no{% endif %}" title="XML"><i class="bi bi-filetype-xml"></i></span>
+                    <a href="{% url 'due' %}">
+                      <span class="vd-arquivo {% if empresa.due == '🟢' %}ok{% else %}no{% endif %}" title="DUE">
+                        <i class="bi bi-filetype-xlsx"></i>
+                      </span>
+                    </a>
+                  </div>
+                </td>
+                <td class='text-center align-middle'>
+                  <div class="vd-acoes d-flex justify-content-center align-items-center gap-2">
+                    <a href="{% url 'view_dados_nfe' %}?empresa_id={{ empresa.empresa_id }}{% if empresa.data_sped %}&data_sped={{ empresa.data_sped|date:'Y-m-d' }}{% endif %}"
+                       class="vd-acao-btn vd-acao-continuar" title="Continuar">
+                      <i class="bi bi-arrow-right-circle"></i> Continuar
+                    </a>
+                    <form method="post" action="{% url 'finalizar_movimentacao' %}" class="d-inline m-0 p-0">
+                      {% csrf_token %}
+                      <input type="hidden" name="empresa_id" value="{{ empresa.empresa_id }}">
+                      <input type="hidden" name="data_sped" value="{{ empresa.data_sped|date:'Y-m-d' }}">
+                      <button type="submit" class="vd-acao-btn vd-acao-finalizar" title="Finalizar">
+                        <i class="bi bi-check2-circle"></i> Finalizar
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <div class="vd-empty">
+            <i class="bi bi-inbox"></i>
+            Nenhuma validação em andamento.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Tab: Concluídas -->
+      <div class="vd-tab-pane" data-tab="concluidas" role="tabpanel">
+        <div class="vd-table-wrap">
+          {% if empresas_concluidas %}
+          <table class="vd-table">
+            <thead>
+              <tr>
+                <th class='text-center'>Empresa</th>
+                <th class='text-center'>CNPJ</th>
+                <th class='text-center'>Data Inicial</th>
+                <th class='text-center'>Data Final</th>
+                <th class='text-center'>Status</th>
+                <th class='text-center'>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for empresa in empresas_concluidas %}
+              <tr data-row
+                  data-empresa-id="{{ empresa.empresa_id }}"
+                  data-status="concluido"
+                  data-data-sped="{{ empresa.data_sped|date:'Y-m-d' }}">
+                <td class='text-center'><span class="vd-empresa-nome">{{ empresa.razao_social|default:"-" }}</span></td>
+                <td class='text-center'><span class="vd-cnpj">{{ empresa.cnpj }}</span></td>
+                <td class='text-center'>{{ empresa.data_inicial|date:"d/m/Y"|default:"-" }}</td>
+                <td class='text-center'>{{ empresa.data_final|date:"d/m/Y"|default:"-" }}</td>
+                <td class='text-center'><span class="vd-badge vd-badge-done">Concluído</span></td>
+                <td class='text-center'>
+                  <div class="vd-acoes">
+                    <a href="{% url 'view_dados_nfe' %}?empresa_id={{ empresa.empresa_id }}{% if empresa.data_sped %}&data_sped={{ empresa.data_sped|date:'Y-m-d' }}{% endif %}&modo=visualizacao"
+                       class="vd-acao-btn vd-acao-ver" title="Ver dados">
+                      <i class="bi bi-eye"></i> Ver
+                    </a>
+                    {% if request.user.is_staff %}
+                      <a href="{% url 'mover_para_edicao' %}?empresa_id={{ empresa.empresa_id }}{% if empresa.data_sped %}&data_sped={{ empresa.data_sped|date:'Y-m-d' }}{% endif %}"
+                        class="vd-acao-btn vd-acao-editar" title="Voltar para edição">
+                        <i class="bi bi-pencil-square"></i> Voltar para edição
+                      </a>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <div class="vd-empty">
+            <i class="bi bi-emoji-smile"></i>
+            Nenhuma validação concluída ainda.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="vd-footer">
+        <span id="vd-page-info">Exibindo registros</span>
+        <div class="vd-pagination">
+          <div class="vd-page-size">
+            <span>Linhas por página:</span>
+            <select id="vd-page-size">
+              <option value="10" selected>10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+            </select>
+          </div>
+          <div class="vd-page-btns" id="vd-page-btns"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="{% static 'js/validacao_dados.js' %}"></script>
+{% endblock %}
