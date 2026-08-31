@@ -940,7 +940,7 @@ class ArquivoServices:
             response.write(linha + "\n")
 
         campo = ["5001", "0"] + [None]
-        linha = "|" + "|".join("" if c is None else str(c) for c in campo)
+        linha = "|".join("" if c is None else str(c) for c in campo)
         response.write(linha + "\n")
 
         # FICHA 1A
