@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404, redirect, render
 from cadastro.models.empresa import Empresa
 from django.contrib import messages
-from cadastro.services.empresas.editar_job import UpdateServices
+from cadastro.services.empresas.editar_companie import UpdateServices
 from django.views import View
 
 # Class based view ( CBV)
