@@ -1,6 +1,6 @@
 from this import d
 from typing import Any, Dict
-from cadastro.utils.extract_sped import SPEDcadastroUtils
+from cadastro.parser.extract_sped import SPEDcadastroUtils
 from cadastro.models.empresa import Empresa
 
 class EmpresaViaSpedServices:
