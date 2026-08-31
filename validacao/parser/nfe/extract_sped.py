@@ -4,7 +4,7 @@ from datetime import datetime
 from validacao.utils.normalizadores import normalizador_decimal, _norm
 from cadastro.models.empresa import EmpresaRegra
 from cadastro.models.empresa import Empresa
-from regras_jobs.validacao import ValidarRegra
+from regras_companies.validacao import ValidarRegra
 from decimal import Decimal
 
 class SPEDProcesses:
