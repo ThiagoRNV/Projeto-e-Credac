@@ -9,6 +9,7 @@ from validacao.utils.normalizadores import normalizador_decimal
 from historico.models import Historico
 from django.contrib.auth.models import User
 from decimal import Decimal
+from cadastro.models.empresa import Empresa
 import json
 
 class SalvarDadosServico:
@@ -18,8 +19,11 @@ class SalvarDadosServico:
         self.usuario = user_id
 
     def salvar_services(self):
+        print(self.items)
         user_obj = User.objects.get(id=self.usuario)
-        erros = []
+        empresa_obj = Empresa.objects.get(id=self.empresa_id)
+
+        erros = [] 
         try:
             if not self.empresa_id:
                 return {'empresa_id': True}
@@ -58,11 +62,15 @@ class SalvarDadosServico:
                         entidade_titular = 'D100' if d100_id else ('C500' if c500_id else 'D500')
                         list_campo = {'nome': 'Nome', 'cnpj_cpf': 'CNPJ/CPF'}
                         for campo in ["nome", "cnpj_cpf"]:
+                            if campo not in item:
+                                continue
                             valor_novo = item.get(campo)
                             valor_antigo = dados_part_antigos.get(campo)
                             if valor_antigo != valor_novo:
                                 Historico.objects.create(
                                     usuario=user_obj,
+                                    empresa=empresa_obj,
+                                    nome_empresa=empresa_obj.razao_social,
                                     tela_modificada='movimentacao',
                                     tabela='participantes',
                                     entidade_pai=participante.nome,
@@ -97,14 +105,15 @@ class SalvarDadosServico:
                         }
                         list_para_conversao = ['vl_doc', 'vl_serv']
                         list_campo = {
-                            'tipo': 'Tipo',
                             'num_doc': 'Número do documento',
                             'chv_cte': 'Chave CT-e',
                             'ser': 'Série',
                             'vl_doc': 'Valor do documento',
                             'vl_serv': 'Valor do serviço',
                         }
-                        for campo in ["tipo", "num_doc", "chv_cte", "ser", "vl_doc", "vl_serv"]:
+                        for campo in ["num_doc", "chv_cte", "ser", "vl_doc", "vl_serv"]:
+                            if campo not in item:
+                                continue
                             valor_antigo = dados_d100_antigos.get(campo)
                             if campo in list_para_conversao:
                                 valor_novo = Decimal(item.get(campo))
@@ -113,6 +122,8 @@ class SalvarDadosServico:
                             if valor_antigo != valor_novo:
                                 Historico.objects.create(
                                     usuario=user_obj,
+                                    empresa=empresa_obj,
+                                    nome_empresa=empresa_obj.razao_social,
                                     tela_modificada='movimentacao',
                                     tabela='registro_d100',
                                     entidade_pai=d100.cod_part.nome if d100.cod_part else '',
@@ -123,13 +134,7 @@ class SalvarDadosServico:
                                     mes_sped=mes_sped,
                                     ano_sped=ano_sped,
                                 )
-                                if campo == 'tipo':
-                                    tipo = str(item.get("tipo")).strip().lower()
-                                    if tipo == 'entrada':
-                                        d100.ind_oper = '0'
-                                    elif tipo in ('saida', 'saída'):
-                                        d100.ind_oper = '1'
-                                elif campo == 'num_doc' and str(item.get("num_doc")).strip():
+                                if campo == 'num_doc' and str(item.get("num_doc")).strip():
                                     try:
                                         d100.num_doc = int(str(item.get("num_doc")).strip())
                                     except (TypeError, ValueError):
@@ -174,6 +179,8 @@ class SalvarDadosServico:
                             'cod_obs': 'Código observação',
                         }
                         for campo in ["cfop", "cst_icms", "cod_obs", "aliq_icms", "vl_opr", "vl_bc_icms", "vl_icms", "vl_red_bc"]:
+                            if campo not in item:
+                                continue
                             valor_antigo = dados_d190_antigos.get(campo)
                             if campo in list_para_conversao:
                                 valor_novo = Decimal(item.get(campo))
@@ -182,10 +189,13 @@ class SalvarDadosServico:
                             if valor_antigo != valor_novo:
                                 Historico.objects.create(
                                     usuario=user_obj,
+                                    empresa=empresa_obj,
+                                    nome_empresa=empresa_obj.razao_social,
                                     tela_modificada='movimentacao',
                                     tabela='registro_d190',
-                                    entidade_pai=d190.registro_d100.cod_part.nome if d190.registro_d100 and d190.registro_d100.cod_part else '',
-                                    entidade_titular='D190',
+                                    part_titular=d190.registro_d100.cod_part.nome if d190.registro_d100 and d190.registro_d100.cod_part else '',
+                                    entidade_pai=item.get('num_doc'),
+                                    entidade_filho='D190',
                                     campo=list_campo.get(campo),
                                     valor_antigo=valor_antigo,
                                     valor_novo=valor_novo,
@@ -219,14 +229,15 @@ class SalvarDadosServico:
                         }
                         list_para_conversao = ['vl_doc', 'vl_forn']
                         list_campo = {
-                            'tipo': 'Tipo',
                             'num_doc': 'Número do documento',
                             'chv_doce': 'Chave do documento',
                             'ser': 'Série',
                             'vl_doc': 'Valor do documento',
                             'vl_forn': 'Valor fornecido',
                         }
-                        for campo in ["tipo", "num_doc", "chv_doce", "ser", "vl_doc", "vl_forn"]:
+                        for campo in ["num_doc", "chv_doce", "ser", "vl_doc", "vl_forn"]:
+                            if campo not in item:
+                                continue
                             valor_antigo = dados_c500_antigos.get(campo)
                             if campo in list_para_conversao:
                                 valor_novo = Decimal(item.get(campo))
@@ -235,6 +246,8 @@ class SalvarDadosServico:
                             if valor_antigo != valor_novo:
                                 Historico.objects.create(
                                     usuario=user_obj,
+                                    empresa=empresa_obj,
+                                    nome_empresa=empresa_obj.razao_social,
                                     tela_modificada='movimentacao',
                                     tabela='registro_c500',
                                     entidade_pai=c500.cod_part.nome if c500.cod_part else '',
@@ -245,13 +258,7 @@ class SalvarDadosServico:
                                     mes_sped=mes_sped,
                                     ano_sped=ano_sped,
                                 )
-                                if campo == 'tipo':
-                                    tipo = str(item.get("tipo")).strip().lower()
-                                    if tipo == 'entrada':
-                                        c500.ind_oper = '0'
-                                    elif tipo in ('saida', 'saída'):
-                                        c500.ind_oper = '1'
-                                elif campo == 'num_doc' and str(item.get("num_doc")).strip():
+                                if campo == 'num_doc' and str(item.get("num_doc")).strip():
                                     try:
                                         c500.num_doc = int(str(item.get("num_doc")).strip())
                                     except (TypeError, ValueError):
@@ -300,6 +307,8 @@ class SalvarDadosServico:
                             'cod_obs': 'Código observação',
                         }
                         for campo in ["cfop", "cst_icms", "cod_obs", "aliq_icms", "vl_opr", "vl_bc_icms", "vl_icms", "vl_bc_icms_st", "vl_icms_st", "vl_red_bc"]:
+                            if campo not in item:
+                                continue
                             valor_antigo = dados_c590_antigos.get(campo)
                             if campo in list_para_conversao:
                                 valor_novo = Decimal(item.get(campo))
@@ -308,6 +317,8 @@ class SalvarDadosServico:
                             if valor_antigo != valor_novo:
                                 Historico.objects.create(
                                     usuario=user_obj,
+                                    empresa=empresa_obj,
+                                    nome_empresa=empresa_obj.razao_social,
                                     tela_modificada='movimentacao',
                                     tabela='registro_c590',
                                     entidade_pai=c590.registro_c500.cod_part.nome if c590.registro_c500 and c590.registro_c500.cod_part else '',
@@ -344,13 +355,14 @@ class SalvarDadosServico:
                         }
                         list_para_conversao = ['vl_doc', 'vl_serv']
                         list_campo = {
-                            'tipo': 'Tipo',
                             'num_doc': 'Número do documento',
                             'ser': 'Série',
                             'vl_doc': 'Valor do documento',
                             'vl_serv': 'Valor do serviço',
                         }
-                        for campo in ["tipo", "num_doc", "ser", "vl_doc", "vl_serv"]:
+                        for campo in ["num_doc", "ser", "vl_doc", "vl_serv"]:
+                            if campo not in item:
+                                continue
                             valor_antigo = dados_d500_antigos.get(campo)
                             if campo in list_para_conversao:
                                 valor_novo = Decimal(item.get(campo))
@@ -359,6 +371,8 @@ class SalvarDadosServico:
                             if valor_antigo != valor_novo:
                                 Historico.objects.create(
                                     usuario=user_obj,
+                                    empresa=empresa_obj,
+                                    nome_empresa=empresa_obj.razao_social,
                                     tela_modificada='movimentacao',
                                     tabela='registro_d500',
                                     entidade_pai=item.get('nome') or (d500.cod_part.nome if d500.cod_part else ''),
@@ -369,13 +383,7 @@ class SalvarDadosServico:
                                     mes_sped=mes_sped,
                                     ano_sped=ano_sped,
                                 )
-                                if campo == 'tipo':
-                                    tipo = str(item.get("tipo")).strip().lower()
-                                    if tipo == 'entrada':
-                                        d500.ind_oper = '0'
-                                    elif tipo in ('saida', 'saída'):
-                                        d500.ind_oper = '1'
-                                elif campo == 'num_doc' and str(item.get("num_doc")).strip():
+                                if campo == 'num_doc' and str(item.get("num_doc")).strip():
                                     try:
                                         d500.num_doc = int(str(item.get("num_doc")).strip())
                                     except (TypeError, ValueError):
@@ -432,6 +440,8 @@ class SalvarDadosServico:
                                     nome_part = it.get('nome') or ''
                                     break
                         for campo in ["cfop", "cst_icms", "cod_obs", "aliq_icms", "vl_opr", "vl_bc_icms", "vl_icms", "vl_bc_icms_st", "vl_icms_st", "vl_red_bc"]:
+                            if campo not in item:
+                                continue
                             valor_antigo = dados_d590_antigos.get(campo)
                             if campo in list_para_conversao:
                                 valor_novo = Decimal(item.get(campo))
@@ -440,6 +450,8 @@ class SalvarDadosServico:
                             if valor_antigo != valor_novo:
                                 Historico.objects.create(
                                     usuario=user_obj,
+                                    empresa=empresa_obj,
+                                    nome_empresa=empresa_obj.razao_social,
                                     tela_modificada='movimentacao',
                                     tabela='registro_d590',
                                     entidade_pai=nome_part,
