@@ -46,8 +46,6 @@ urlpatterns = [
     path('validacao_dados/', include('validacao.urls.nfe.view_data')),
     path('upload/', include('validacao.urls.uploads.uploads')),
 
-    path('pendencias/', include('pendencias.urls')),
-
     path('ajuda/', include('help.urls')),
 ]
 if settings.DEBUG:

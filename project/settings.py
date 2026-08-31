@@ -75,7 +75,6 @@ INSTALLED_APPS = [
     'validacao',
     'accounts',
     'help',
-    'pendencias',
     'django_extensions'
 ]
 
