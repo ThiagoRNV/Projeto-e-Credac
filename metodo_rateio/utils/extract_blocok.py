@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List, Dict, Any, Optional
-from regras_jobs.validacao import ValidarRegra
+from regras_companies.validacao import ValidarRegra
 from cadastro.models.empresa import EmpresaRegra , Empresa 
 
 regras = None

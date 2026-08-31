@@ -42,8 +42,8 @@
         <div class="analysis-header">
             <h4>
                 <a href="{% url 'analise_bloco_k25x' %}" class="voltar-btn"><i class="bi bi-arrow-left-circle-fill"></i></a>
-                <span>Industrialização Terceiros (K250/K255)</span>
-                <a href="{% url 'view_producao_k250_k255' %}" class="link-propria btn btn-outline-secondary btn-sm">Ver Produção Própria (K250/K255)</a>
+                <span>Industrialização Terceiros (K230/K235)</span>
+                <a href="{% url 'view_producao_k230_k235' %}" class="link-propria btn btn-outline-secondary btn-sm">Ver Produção Própria (K250/K255)</a>
             </h4>
             <div style="display: flex; gap: 0.5rem;">
                 <button type="button" onclick="limparTodosFiltros()" class="btn-save btn-limpar"><i class="bi bi-x-circle"></i> Limpar Filtros</button>
@@ -73,11 +73,11 @@
                             {% for item_produzido in grupo.k250s %}
                             <tr class="k250-row">
                                 <td><strong>K250</strong></td>
-                                <td><input type="text" value="{% if item_produzido.data_prod %}{{ item_produzido.data_prod|date:'d/m/Y' }}{% endif %}" class="input_cells"></td>
-                                <td><input type="text" value="{{ item_produzido.cod_item|default:'' }}" class="input_cells"></td>
-                                <td><input type="text" value="{{ item_produzido.quantidade|default:'' }}" class="input_cells"></td>
-                                <td><input type="text" value="{{ item_produzido.mes_sped|default:'' }}" class="input_cells"></td>
-                                <td><input type="text" value="{% if item_produzido.ano_sped %}{{ item_produzido.ano_sped }}{% endif %}" class="input_cells"></td>
+                                <td><input type="text" value="{% if item_produzido.data_prod %}{{ item_produzido.data_prod|date:'d/m/Y' }}{% endif %}" class="input_cells" readonly disabled></td>
+                                <td><input type="text" value="{{ item_produzido.cod_item|default:'' }}" class="input_cells" readonly disabled></td>
+                                <td><input type="text" value="{{ item_produzido.quantidade|default:'' }}" class="input_cells" readonly disabled></td>
+                                <td><input type="text" value="{{ item_produzido.mes_sped|default:'' }}" class="input_cells" readonly disabled></td>
+                                <td><input type="text" value="{% if item_produzido.ano_sped %}{{ item_produzido.ano_sped }}{% endif %}" class="input_cells" readonly disabled></td>
                                 <td></td><td></td><td></td><td></td>
                             </tr>
                             {% endfor %}
