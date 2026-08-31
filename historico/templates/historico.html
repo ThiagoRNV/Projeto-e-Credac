@@ -118,6 +118,12 @@
           </select>
         </div>
         <div class="vd-field">
+          <label for="hist-filter-empresa">Empresa</label>
+          <select id="hist-filter-empresa">
+            <option value="">Todos</option>
+          </select>
+        </div>
+        <div class="vd-field">
           <label>Período da alteração</label>
           <div class="vd-periodo">
             <input type="date" id="hist-filter-data-inicio" aria-label="Data inicial">
@@ -206,9 +212,10 @@
                 <table class="vd-table hist-table">
                     <thead>
                     <tr>
+                        <th class='text-center'>Empresa</th>
                         <th class="text-center">Período</th>
                         <th class="text-center">Participante titular</th>
-                        <th class="text-center">Entidade Pai</th>
+                        <th class="text-center">Série</th>
                         <th class="text-center">Entidade Filho</th>
                         <th class="text-center">Campo</th>
                         <th class="text-center">Alteração</th>
@@ -218,9 +225,16 @@
                     <tbody>
                     {% for hist in dados.itens %}
                     <tr data-row
-                        data-busca="{{ hist.campo }} {{ hist.entidade_pai }} {{ hist.entidade_titular }} {{ hist.prod_titular }} {{ hist.valor_antigo }} {{ hist.valor_novo }} {% if hist.usuario %}{{ hist.usuario.username }}{% endif %}"
+                        data-busca="{{ hist.campo }} {{ hist.entidade_pai }} {{ hist.part_titular }} {{ hist.entidade_filho }} {{ hist.nome_empresa }} {{ hist.empresa }} {{ hist.valor_antigo }} {{ hist.valor_novo }} {% if hist.usuario %}{{ hist.usuario.username }}{% endif %}"
                         data-usuario="{% if hist.usuario %}{{ hist.usuario.username|lower }}{% endif %}"
+                        data-empresa="{% if hist.empresa_id %}{{ hist.empresa_id }}{% elif hist.nome_empresa %}{{ hist.nome_empresa|lower }}{% endif %}"
+                        data-empresa-nome="{{ hist.nome_empresa|default:hist.empresa|default:'' }}"
                         data-data="{{ hist.data_alteracao|date:'Y-m-d' }}">
+                        <td class="text-center">
+                          <span class="hist-entidade" title="{{ hist.nome_empresa|default:hist.empresa|default:'' }}">
+                            {{ hist.nome_empresa|default:hist.empresa|default:"—" }}
+                          </span>
+                        </td>
                         <td class="text-center">
                         {% if hist.mes_sped or hist.ano_sped %}
                         <span class="hist-periodo">
@@ -231,12 +245,12 @@
                         {% endif %}
                         </td>
                         <td class="text-center">
-                        <span class="hist-entidade" title="{{ hist.entidade_pai|default:'' }}">{{ hist.entidade_pai|default:"—" }}</span>
+                        <span class="hist-entidade" title="{{ hist.part_titular|default:'' }}">{{ hist.part_titular|default:"—" }}</span>
                         </td>
                         <td class="text-center">
-                        <span class="hist-entidade" title="{{ hist.entidade_titular|default:'' }}">{{ hist.entidade_titular|default:"—" }}</span>
+                          <span class="hist-entidade" title="{{ hist.entidade_pai|default:'' }}">{{ hist.entidade_pai|default:"—" }}</span>
                         </td>
-                        <td class="text-center">{{ hist.prod_titular|default:"—" }}</td>
+                        <td class="text-center">{{ hist.entidade_filho|default:"—" }}</td>
                         <td class="text-center"><span class="hist-campo">{{ hist.campo }}</span></td>
                         <td>
                         <div class="hist-diff">
@@ -254,7 +268,6 @@
                             <span class="hist-meta-date" style="text-align: center;">{{ hist.data_alteracao|date:"d/m/Y H:i" }}</span>
                         </div>
                         </td>
-        
                     </tr>
                     {% endfor %}
                     </tbody>
@@ -290,6 +303,7 @@
     var panes = document.querySelectorAll('.hist-tab-pane');
     var buscaInput = document.getElementById('hist-filter-busca');
     var usuarioSelect = document.getElementById('hist-filter-usuario');
+    var empresaSelect = document.getElementById('hist-filter-empresa');
     var dataInicio = document.getElementById('hist-filter-data-inicio');
     var dataFim = document.getElementById('hist-filter-data-fim');
     var btnAplicar = document.getElementById('hist-btn-aplicar');
@@ -314,12 +328,37 @@
         });
     }
 
+    function populateEmpresas() {
+        if (!empresaSelect) return;
+        var seen = {};
+        var options = [];
+        document.querySelectorAll('.hist-table tbody tr[data-empresa]').forEach(function (row) {
+            var id = (row.getAttribute('data-empresa') || '').trim();
+            if (!id || seen[id]) return;
+            seen[id] = true;
+            options.push({
+                value: id,
+                label: (row.getAttribute('data-empresa-nome') || id).trim() || id
+            });
+        });
+        options.sort(function (a, b) {
+            return a.label.localeCompare(b.label, 'pt-BR', { sensitivity: 'base' });
+        });
+        options.forEach(function (item) {
+            var opt = document.createElement('option');
+            opt.value = item.value;
+            opt.textContent = item.label;
+            empresaSelect.appendChild(opt);
+        });
+    }
+
     function applyFilters() {
         var pane = activePane();
         if (!pane) return;
 
         var q = (buscaInput && buscaInput.value || '').trim().toLowerCase();
         var usuario = (usuarioSelect && usuarioSelect.value || '').toLowerCase();
+        var empresa = (empresaSelect && empresaSelect.value || '').trim();
         var ini = dataInicio && dataInicio.value || '';
         var fim = dataFim && dataFim.value || '';
 
@@ -330,10 +369,12 @@
             var ok = true;
             var busca = (row.getAttribute('data-busca') || '').toLowerCase();
             var rowUser = (row.getAttribute('data-usuario') || '').toLowerCase();
+            var rowEmpresa = (row.getAttribute('data-empresa') || '').trim();
             var rowDate = row.getAttribute('data-data') || '';
 
             if (q && busca.indexOf(q) === -1) ok = false;
             if (usuario && rowUser !== usuario) ok = false;
+            if (empresa && rowEmpresa !== empresa) ok = false;
             if (ini && rowDate && rowDate < ini) ok = false;
             if (fim && rowDate && rowDate > fim) ok = false;
 
@@ -382,6 +423,7 @@
         btnLimpar.addEventListener('click', function () {
             if (buscaInput) buscaInput.value = '';
             if (usuarioSelect) usuarioSelect.value = '';
+            if (empresaSelect) empresaSelect.value = '';
             if (dataInicio) dataInicio.value = '';
             if (dataFim) dataFim.value = '';
             applyFilters();
@@ -389,6 +431,7 @@
     }
 
     populateUsuarios();
+    populateEmpresas();
 })();
 </script>
 {% endblock %}

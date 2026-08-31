@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from cadastro.models.empresa import Empresa
 from django.db import models
 
 
@@ -23,9 +24,11 @@ class Historico(models.Model):
         max_length=30,
         choices=TELA_CHOICES,
     )
-    entidade_pai = models.CharField('Entidade Pai', max_length=50, null=True, blank=True)
-    entidade_titular = models.CharField('Entidade titular', max_length=50, null=True, blank=True)
-    prod_titular = models.CharField('Produto titular', max_length=30, null=True, blank=True)
+    empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE, null=True, blank=True, verbose_name='Empresa ID')
+    nome_empresa = models.CharField('Nome empresa', max_length=50, null=True, blank=True)
+    part_titular = models.CharField('Participante Titular', max_length=50, null=True, blank=True)
+    entidade_pai = models.CharField('Entidade pai', max_length=50, null=True, blank=True)
+    entidade_filho = models.CharField('Entidade Filho', max_length=30, null=True, blank=True)
     tabela = models.CharField('Tabela', max_length=30, null=True, blank=True)
     campo = models.CharField('Campo', max_length=100)
     valor_antigo = models.TextField('Valor antigo', null=True, blank=True)

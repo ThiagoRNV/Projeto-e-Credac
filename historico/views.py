@@ -8,7 +8,7 @@ TELA_LABELS = OrderedDict(Historico.TELA_CHOICES)
 
 
 def historico(request):
-    historicos = list(Historico.objects.select_related('usuario').all())
+    historicos = list(Historico.objects.select_related('usuario', 'empresa').all())
 
     historicos_por_tela = OrderedDict()
     for chave, label in TELA_LABELS.items():
