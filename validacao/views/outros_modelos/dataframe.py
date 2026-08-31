@@ -46,7 +46,6 @@ class DataFrameServicos(View):
             return HttpResponse("Data SPED é obrigatória. Forneça o parâmetro data_sped no formato YYYY-MM-DD.", status=400)
 
         filtros = {
-            'tipo': request.GET.get('tipo') or '',
             'cnpj_cpf': request.GET.get('cnpj_cpf') or '',
             'nome': request.GET.get('nome') or '',
             'num_doc': request.GET.get('num_doc') or '',
@@ -102,9 +101,6 @@ class DataFrameServicos(View):
         def like(val):
             return f"%{val}%"
 
-        if filtros['tipo']:
-            query_sped += " AND UPPER(CASE d.ind_oper WHEN '0' THEN 'Entrada' WHEN '1' THEN 'Saida' ELSE '---' END) LIKE UPPER(%s)"
-            params.append(like(filtros['tipo']))
         if filtros['cnpj_cpf']:
             query_sped += " AND UPPER(p.cnpj_cpf) LIKE UPPER(%s)"
             params.append(like(filtros['cnpj_cpf']))
@@ -214,7 +210,7 @@ class DataFrameServicos(View):
         # ------------------------------- Energia (C500 -> C590) ------------------------------- #
 
         campos_filtro_energia = [
-            'tipo', 'cnpj_cpf', 'nome', 'num_doc', 'chv_doce', 'ser', 'dt_doc',
+            'cnpj_cpf', 'nome', 'num_doc', 'chv_doce', 'ser', 'dt_doc',
             'cfop', 'cst_icms', 'aliq_icms', 'vl_opr', 'vl_bc_icms', 'vl_icms',
             'vl_bc_icms_st', 'vl_icms_st', 'vl_red_bc', 'vl_doc', 'vl_forn', 'cod_obs',
         ]

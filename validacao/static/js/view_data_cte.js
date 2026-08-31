@@ -170,10 +170,10 @@
         return Array.from(document.querySelectorAll('.input_cells')).some(inputModificado);
     }
 
-    // Ordem dos .input_cells na linha do documento D100
+    // Ordem dos .input_cells na linha do documento D100 (sem coluna Tipo)
     const MAPA_INPUTS_D100 = [
-        ['tipo', 0], ['cnpj_cpf', 1], ['nome', 2], ['num_doc', 3],
-        ['chv_cte', 4], ['ser', 5], ['dt_doc', 6], ['vl_doc', 7], ['vl_serv', 8],
+        ['cnpj_cpf', 0], ['nome', 1], ['num_doc', 2],
+        ['chv_cte', 3], ['ser', 4], ['dt_doc', 5], ['vl_doc', 6], ['vl_serv', 7],
     ];
 
     // Ordem dos .input_cells na linha analítica D190
@@ -182,10 +182,10 @@
         ['vl_bc_icms', 4], ['vl_icms', 5], ['vl_red_bc', 6], ['cod_obs', 7],
     ];
 
-    // Ordem dos .input_cells na linha do documento C500 (Energia)
+    // Ordem dos .input_cells na linha do documento C500 (Energia, sem coluna Tipo)
     const MAPA_INPUTS_C500 = [
-        ['tipo', 0], ['cnpj_cpf', 1], ['nome', 2], ['num_doc', 3],
-        ['chv_doce', 4], ['ser', 5], ['dt_doc', 6], ['vl_doc', 7], ['vl_forn', 8],
+        ['cnpj_cpf', 0], ['nome', 1], ['num_doc', 2],
+        ['chv_doce', 3], ['ser', 4], ['dt_doc', 5], ['vl_doc', 6], ['vl_forn', 7],
     ];
 
     // Ordem dos .input_cells na linha analítica C590 (Energia)
@@ -195,10 +195,10 @@
         ['vl_red_bc', 8], ['cod_obs', 9],
     ];
 
-    // Ordem dos .input_cells na linha do documento D500 (Comunicação)
+    // Ordem dos .input_cells na linha do documento D500 (Comunicação, sem coluna Tipo)
     const MAPA_INPUTS_D500 = [
-        ['tipo', 0], ['cnpj_cpf', 1], ['nome', 2], ['num_doc', 3],
-        ['ser', 4], ['dt_doc', 5], ['vl_doc', 6], ['vl_serv', 7],
+        ['cnpj_cpf', 0], ['nome', 1], ['num_doc', 2],
+        ['ser', 3], ['dt_doc', 4], ['vl_doc', 5], ['vl_serv', 6],
     ];
 
     // Ordem dos .input_cells na linha analítica D590 (Comunicação)

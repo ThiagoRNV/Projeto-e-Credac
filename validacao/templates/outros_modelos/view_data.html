@@ -241,7 +241,6 @@
         <thead>
           <tr>
             <th class='text-center'>Registro</th>
-            <th class='text-center'>Tipo</th>
             <th class='text-center'>CNPJ/CPF</th>
             <th class='text-center'>Participante</th>
             <th class='text-center'>Nº Doc</th>
@@ -261,7 +260,6 @@
           </tr>
           <tr class="filter-row">
             <th></th>
-            <th><input type="text" name="tipo" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.tipo }}"></th>
             <th><input type="text" name="cnpj_cpf" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.cnpj_cpf }}"></th>
             <th><input type="text" name="nome" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.nome }}"></th>
             <th><input type="text" name="num_doc" class="filter-input text-center" placeholder="Filtrar" value="{{ filters.num_doc }}"></th>
@@ -287,23 +285,14 @@
                 data-cod-part="{{ doc.cod_part|default_if_none:'' }}"
                 data-d100-id="{{ doc.d100_id }}">
                 <td class='text-center'><strong><span class="vd-badge vd-badge-wip">{{ doc.reg|default:"D100" }}</span></strong></td>
-                <td>
-                    {% if somente_visualizacao %}
-                <span class="vd-tipo-badge {% if doc.tipo_nota|lower == 'entrada' %}entrada{% else %}saida{% endif %}">
-                    {{ doc.tipo_nota|default:"-" }}
-                </span>
-                    {% else %}
-                <input type="text" value="{{ doc.tipo_nota }}" class="input_cells" {% if somente_visualizacao %}readonly{% endif %}>
-                    {% endif %}
-                </td>
-                <td><input type="text" value="{{ doc.cnpj_cpf|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
-                <td><input type="text" value="{{ doc.nome|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
-                <td><input type="text" value="{{ doc.num_doc|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
-                <td><input type="text" value="{{ doc.chv_cte|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
-                <td><input type="text" value="{{ doc.ser|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" value="{{ doc.cnpj_cpf|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %} readonly disabled></td>
+                <td><input type="text" value="{{ doc.nome|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %} readonly disabled></td>
+                <td><input type="text" value="{{ doc.num_doc|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %} readonly disabled></td>
+                <td><input type="text" value="{{ doc.chv_cte|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %} readonly disabled></td>
+                <td><input type="text" value="{{ doc.ser|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %} readonly disabled></td>
                 <td><input type="text" value="{{ doc.dt_doc|default_if_none:'' }}" class="input_cells text-center" readonly></td>
-                <td><input type="text" inputmode="decimal" value="{{ doc.vl_doc|default_if_none:'' }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
-                <td><input type="text" inputmode="decimal" value="{{ doc.vl_serv|default_if_none:'' }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" inputmode="decimal" value="{{ doc.vl_doc|default_if_none:'' }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %} readonly disabled></td>
+                <td><input type="text" inputmode="decimal" value="{{ doc.vl_serv|default_if_none:'' }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %} readonly disabled></td>
                 <td></td>
                 <td></td>
                 <td></td>
@@ -317,7 +306,6 @@
             {% for item in doc.d190s %}
             <tr class="vd-row-d190" data-d190-id="{{ item.d190_id }}">
                 <td class='text-center'><strong><span class="vd-badge vd-badge-done">{{ item.reg|default:"D190" }}</span></strong></td>
-                <td></td>
                 <td></td>
                 <td></td>
                 <td></td>
@@ -443,7 +431,6 @@
         <thead>
           <tr>
             <th class='text-center'>Registro</th>
-            <th class='text-center'>Tipo</th>
             <th class='text-center'>CNPJ/CPF</th>
             <th class='text-center'>Participante</th>
             <th class='text-center'>Nº Doc</th>
@@ -465,7 +452,6 @@
           </tr>
           <tr class="filter-row">
             <th></th>
-            <th><input type="text" name="en_tipo" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_energia.tipo }}"></th>
             <th><input type="text" name="en_cnpj_cpf" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_energia.cnpj_cpf }}"></th>
             <th><input type="text" name="en_nome" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_energia.nome }}"></th>
             <th><input type="text" name="en_num_doc" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_energia.num_doc }}"></th>
@@ -493,24 +479,14 @@
                 data-cod-part="{{ doc.cod_part|default_if_none:'' }}"
                 data-c500-id="{{ doc.c500_id }}">
                 <td class='text-center'><strong><span class="vd-badge vd-badge-wip">{{ doc.reg|default:"C500" }}</span></strong></td>
-                <td>
-                    {% if somente_visualizacao %}
-                <span class="vd-tipo-badge {% if doc.tipo_nota|lower == 'entrada' %}entrada{% else %}saida{% endif %}">
-                    {{ doc.tipo_nota|default:"-" }}
-                </span>
-                    {% else %}
-                <input type="text" value="{{ doc.tipo_nota }}" class="input_cells">
-                    {% endif %}
-                </td>
-                <td><input type="text" value="{{ doc.cnpj_cpf|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
-                <td><input type="text" value="{{ doc.nome|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
-                <td><input type="text" value="{{ doc.num_doc|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
-                <td><input type="text" value="{{ doc.chv_doce }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
-                <td><input type="text" value="{{ doc.ser }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" value="{{ doc.cnpj_cpf|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %} readonly disabled></td>
+                <td><input type="text" value="{{ doc.nome|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %} readonly disabled></td>
+                <td><input type="text" value="{{ doc.num_doc|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %} readonly disabled></td>
+                <td><input type="text" value="{{ doc.chv_doce }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %} readonly disabled></td>
+                <td><input type="text" value="{{ doc.ser }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %} readonly disabled></td>
                 <td><input type="text" value="{{ doc.dt_doc|default_if_none:'' }}" class="input_cells text-center" readonly></td>
-                <td><input type="text" inputmode="decimal" value="{{ doc.vl_doc }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
-                <td><input type="text" inputmode="decimal" value="{{ doc.vl_forn }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
-                <td></td>
+                <td><input type="text" inputmode="decimal" value="{{ doc.vl_doc }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %} readonly disabled></td>
+                <td><input type="text" inputmode="decimal" value="{{ doc.vl_forn }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %} readonly disabled></td>
                 <td></td>
                 <td></td>
                 <td></td>
@@ -634,7 +610,6 @@
         <thead>
           <tr>
             <th class='text-center'>Registro</th>
-            <th class='text-center'>Tipo</th>
             <th class='text-center'>CNPJ/CPF</th>
             <th class='text-center'>Participante</th>
             <th class='text-center'>Nº Doc</th>
@@ -655,7 +630,6 @@
           </tr>
           <tr class="filter-row">
             <th></th>
-            <th><input type="text" name="com_tipo" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_comunicacao.tipo }}"></th>
             <th><input type="text" name="com_cnpj_cpf" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_comunicacao.cnpj_cpf }}"></th>
             <th><input type="text" name="com_nome" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_comunicacao.nome }}"></th>
             <th><input type="text" name="com_num_doc" class="filter-input text-center" placeholder="Filtrar" value="{{ filters_comunicacao.num_doc }}"></th>
@@ -682,22 +656,13 @@
                 data-cod-part="{{ doc.cod_part|default_if_none:'' }}"
                 data-d500-id="{{ doc.d500_id }}">
                 <td class='text-center'><strong><span class="vd-badge vd-badge-wip">{{ doc.reg|default:"D500" }}</span></strong></td>
-                <td>
-                    {% if somente_visualizacao %}
-                <span class="vd-tipo-badge {% if doc.tipo_nota|lower == 'entrada' %}entrada{% else %}saida{% endif %}">
-                    {{ doc.tipo_nota|default:"-" }}
-                </span>
-                    {% else %}
-                <input type="text" value="{{ doc.tipo_nota }}" class="input_cells">
-                    {% endif %}
-                </td>
-                <td><input type="text" value="{{ doc.cnpj_cpf|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
-                <td><input type="text" value="{{ doc.nome|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
-                <td><input type="text" value="{{ doc.num_doc|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
-                <td><input type="text" value="{{ doc.ser }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" value="{{ doc.cnpj_cpf|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %} readonly disabled></td>
+                <td><input type="text" value="{{ doc.nome|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %} readonly disabled></td>
+                <td><input type="text" value="{{ doc.num_doc|default_if_none:'' }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %} readonly disabled></td>
+                <td><input type="text" value="{{ doc.ser }}" class="input_cells text-center" {% if somente_visualizacao %}readonly{% endif %} readonly disabled></td>
                 <td><input type="text" value="{{ doc.dt_doc|default_if_none:'' }}" class="input_cells text-center" readonly></td>
-                <td><input type="text" inputmode="decimal" value="{{ doc.vl_doc }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
-                <td><input type="text" inputmode="decimal" value="{{ doc.vl_serv }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %}></td>
+                <td><input type="text" inputmode="decimal" value="{{ doc.vl_doc }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %} readonly disabled></td>
+                <td><input type="text" inputmode="decimal" value="{{ doc.vl_serv }}" class="input_cells input-num text-center" {% if somente_visualizacao %}readonly{% endif %} readonly disabled></td>
                 <td></td>
                 <td></td>
                 <td></td>
@@ -713,7 +678,6 @@
             {% for item in doc.d590s %}
             <tr class="vd-row-d190" data-d590-id="{{ item.d590_id }}" data-nome="{{ doc.nome|default_if_none:'' }}">
                 <td class='text-center'><strong><span class="vd-badge vd-badge-done">{{ item.reg|default:"D590" }}</span></strong></td>
-                <td></td>
                 <td></td>
                 <td></td>
                 <td></td>
@@ -782,6 +746,6 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="{% static 'js/view_data_cte.js' %}?v=3.0"></script>
+<script src="{% static 'js/view_data_cte.js' %}?v=4.0"></script>
 </body>
 </html>
