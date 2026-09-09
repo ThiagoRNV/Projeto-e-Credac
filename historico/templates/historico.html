@@ -213,10 +213,11 @@
                     <thead>
                     <tr>
                         <th class='text-center'>Empresa</th>
-                        <th class="text-center">Período</th>
                         <th class="text-center">Participante titular</th>
+                        <th class="text-center">Período</th>
+                        <th class="text-center">Documento</th>
                         <th class="text-center">Série</th>
-                        <th class="text-center">Entidade Filho</th>
+                        <th class='text-center'>Registro</th>
                         <th class="text-center">Campo</th>
                         <th class="text-center">Alteração</th>
                         <th class="text-center">Quando</th>
@@ -236,6 +237,9 @@
                           </span>
                         </td>
                         <td class="text-center">
+                            <span class="hist-entidade" title="{{ hist.part_titular|default:'' }}">{{ hist.part_titular|default:"—" }}</span>
+                        </td>
+                        <td class="text-center">
                         {% if hist.mes_sped or hist.ano_sped %}
                         <span class="hist-periodo">
                             {{ hist.mes_sped|default:"—" }}/{{ hist.ano_sped|default:"—" }}
@@ -245,12 +249,10 @@
                         {% endif %}
                         </td>
                         <td class="text-center">
-                        <span class="hist-entidade" title="{{ hist.part_titular|default:'' }}">{{ hist.part_titular|default:"—" }}</span>
-                        </td>
-                        <td class="text-center">
                           <span class="hist-entidade" title="{{ hist.entidade_pai|default:'' }}">{{ hist.entidade_pai|default:"—" }}</span>
                         </td>
                         <td class="text-center">{{ hist.entidade_filho|default:"—" }}</td>
+                        <td></td>
                         <td class="text-center"><span class="hist-campo">{{ hist.campo }}</span></td>
                         <td>
                         <div class="hist-diff">
