@@ -7,7 +7,7 @@ from validacao.utils.normalizadores import normalizador_decimal
 import json
 import logging
 from decimal import Decimal
-
+from cadastro.models.empresa import Empresa
 logger = logging.getLogger(__name__)
 
 # Exceptions simples para erros específicos
@@ -24,6 +24,7 @@ class SalvarEdicaoService:
 
     def process_salvar(self):
         user_obj = User.objects.get(id=self.usuario)
+        empresa_obj = Empresa.objects.get(id=self.empresa_id)
         try:
             if not self.empresa_id:
                 logger.error('ID da empresa não recebido')
@@ -63,7 +64,9 @@ class SalvarEdicaoService:
                         notas_qs = notas_qs.filter(numero_nota=numero_nota_old)
                     
                     dados_notas_antigos = {}
+                    serie = None
                     for nota in notas_qs:
+                        serie = nota.serie_documento
                         dados_notas_antigos = {
                             'tipo': nota.tipo if nota.tipo else '',
                             'codigo_uf': nota.codigo_uf if nota.codigo_uf else '',
@@ -169,11 +172,13 @@ class SalvarEdicaoService:
                             if valor_antigo != valor_novo:
                                     Historico.objects.create(
                                         usuario=user_obj,
+                                        empresa=empresa_obj,
                                         tela_modificada='movimentacao',
                                         tabela='notas_participantes', 
-                                        entidade_pai=part_obj.nome,
-                                        entidade_titular=nota,
-                                        prod_titular=prod.codigo_prod,
+                                        part_titular=part_obj.nome,
+                                        documento=nota,
+                                        serie=serie,
+                                        reg_titular=prod.codigo_prod,
                                         campo=list_campo.get(campo), 
                                         valor_antigo=valor_antigo,
                                         valor_novo=valor_novo,
