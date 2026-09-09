@@ -11,7 +11,7 @@ class CustomLoginView(LoginView):
         access_mode = self.request.POST.get('access_mode')
 
         if access_mode == 'admin':
-            return reverse_lazy('admin:index')
+            return reverse_lazy('admin:inedx')
         else:
             return super().get_success_url()
 
