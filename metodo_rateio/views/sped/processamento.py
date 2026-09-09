@@ -2,7 +2,7 @@
 from django.contrib import messages
 from django.shortcuts import redirect, render
 from django.views import View
-from metodo_rateio.services.process_sped import ProcessamentoServices
+from metodo_rateio.services.process_sped import ProcessBlocoK
 
 import logging
 
@@ -20,7 +20,7 @@ class ProcessamentoView(View):
         btns = request.POST.get('btns')
         sped_file = request.FILES.get('sped_files')
 
-        services = ProcessamentoServices(sped_file, btns)
+        services = ProcessBlocoK(sped_file, btns)
 
         processamento = services.processar_bloco_k()
 

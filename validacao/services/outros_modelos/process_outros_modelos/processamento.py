@@ -36,7 +36,7 @@ class CompaineError(SpedException):
 
 
 
-class ProcessServices:
+class ProcessOutrosModelos:
     def __init__(self, sped_file) -> None:
         self.sped_file = sped_file
         print(f'sped file: {self.sped_file}')

@@ -1,8 +1,8 @@
-from metodo_rateio.utils.extract_planilha import ExtractPlanilhaCusto
+from metodo_rateio.parser.extract_planilha import ExtractPlanilhaCusto
 from metodo_rateio.utils.normalizadores import Normalizadores
 from metodo_rateio.models.planilha import PlanilhaCusto
 
-class ProcessServices:
+class ProcessCusto:
 
     def __init__(self, planilha_custo, empresa, data_referencia, empresa_id, razao_social) -> None:
         self.planilha_custo = planilha_custo

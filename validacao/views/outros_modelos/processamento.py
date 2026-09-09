@@ -2,17 +2,17 @@ from django.contrib import messages
 from django.shortcuts import redirect
 from django.views import View
 
-from validacao.services.outros_modelos.process_outros_modelos.processamento import CompaineError, EmptyList, ProcessServices, SpedException, SpedFormatError
+from validacao.services.outros_modelos.process_outros_modelos.processamento import CompaineError, EmptyList, ProcessOutrosModelos, SpedException, SpedFormatError
 
 from django.http import HttpResponse, HttpResponseServerError
 
-class ProcessamentoServicoView(View):
+class ProcessamentoOutrosModelos(View):
     
     def post(self, request):
 
         sped_file = request.FILES.get('sped_files')
         
-        services = ProcessServices(sped_file) 
+        services = ProcessOutrosModelos(sped_file) 
         process = services.processamento_service()
 
         try:

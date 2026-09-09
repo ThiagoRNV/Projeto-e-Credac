@@ -10,12 +10,12 @@ from metodo_rateio.models.sped import (
     analise_k23x,
     analise_k25x,
 )
-from metodo_rateio.utils.extract_blocok import BlocoKProcessesServices
+from metodo_rateio.parser.extract_blocok import BlocoKProcessesServices
 from cadastro.models.empresa import Empresa
 from cadastro.models.produtos import Cadastro_itens_sped
 
 
-class ProcessamentoServices:
+class ProcessBlocoK:
 
     def __init__(self, sped_file, btns):
         self.sped_file = sped_file

@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.shortcuts import get_object_or_404
 from cadastro.models.empresa import Empresa
 from django.views import View
-from metodo_rateio.services.process_planilha import ProcessServices
+from metodo_rateio.services.process_planilha import ProcessCusto
 
 class TelaParaProcessamento(View):
 
@@ -23,7 +23,7 @@ class ProcessamentoXlsx(View):
               empresa_id = get_object_or_404(Empresa, id=empresa)
               razao_social = empresa_id.razao_social
 
-              services = ProcessServices(
+              services = ProcessCusto(
                      planilha_custo, empresa, data_referencia, 
                      empresa_id, razao_social 
               ) 

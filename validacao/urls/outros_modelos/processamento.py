@@ -1,6 +1,6 @@
 from django.urls import path
-from validacao.views.outros_modelos.processamento import ProcessamentoServicoView
+from validacao.views.outros_modelos.processamento import ProcessamentoOutrosModelos
 
 urlpatterns = [
-    path('', ProcessamentoServicoView.as_view(), name='cte_process')
+    path('', ProcessamentoOutrosModelos.as_view(), name='cte_process')
 ]

@@ -3,7 +3,7 @@ from django.shortcuts import redirect, render
 from django.views import View
 from cadastro.models.empresa import Empresa
 from validacao.views.nfe.processar_spedxml import ProcessamentoFiscalView 
-from validacao.views.outros_modelos.processamento import ProcessamentoServicoView
+from validacao.views.outros_modelos.processamento import ProcessamentoOutrosModelos
 
 class SpedXmlView(View):
 
@@ -26,7 +26,7 @@ class SpedXmlView(View):
 
         if btn == 'processar':
             ProcessamentoFiscalView.as_view()(request) 
-            ProcessamentoServicoView.as_view()(request)
+            ProcessamentoOutrosModelos.as_view()(request)
 
             return redirect ('sped_xml')
 
